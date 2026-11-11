@@ -1,0 +1,2 @@
+﻿S	Single Room	100.00
+D	Double Room	150.00
