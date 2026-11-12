@@ -81,19 +81,3 @@ public class ResetPasswordVM
     [EmailAddress]
     public string Email { get; set; }
 }
-
-// Reservation
-
-public class ReserveVM
-{
-    [DisplayName("Room Type")]
-    public string TypeId { get; set; }
-
-    [DisplayName("Check In Date")]
-    [DataType(DataType.Date)]
-    public DateOnly CheckIn { get; set; }
-
-    [DisplayName("Check Out Date")]
-    [DataType(DataType.Date)]
-    public DateOnly CheckOut { get; set; }
-}
