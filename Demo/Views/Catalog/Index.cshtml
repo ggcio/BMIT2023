@@ -1,0 +1,70 @@
+@model IEnumerable<Facility>
+
+@{
+    ViewBag.Title = "Catalog | Index";
+    int? categoryId = ViewBag.CategoryId;
+}
+
+@* Category filter: the selected one is shown in bold without a link *@
+<p>
+    @if (categoryId == null)
+    {
+        <b>All</b>
+    }
+    else
+    {
+        <a href="/Catalog">All</a>
+    }
+
+    @foreach (Category c in ViewBag.Categories)
+    {
+        <text> | </text>
+        if (c.Id == categoryId)
+        {
+            <b>@c.Name</b>
+        }
+        else
+        {
+            <a href="/Catalog?categoryId=@c.Id">@c.Name</a>
+        }
+    }
+</p>
+
+<p>@Model.Count() record(s)</p>
+
+@if (!Model.Any())
+{
+    <p>No facilities found.</p>
+}
+
+@foreach (var f in Model)
+{
+    <table class="table detail">
+        <tr>
+            <th>Name</th>
+            <td>@f.Name</td>
+        </tr>
+        <tr>
+            <th>Category</th>
+            <td>@f.Category.Name</td>
+        </tr>
+        <tr>
+            <th>Location</th>
+            <td>@f.Location</td>
+        </tr>
+        <tr>
+            <th>Capacity</th>
+            <td>@f.Capacity</td>
+        </tr>
+        <tr>
+            <th>Hourly Rate</th>
+            <td>RM @f.HourlyRate.ToString("0.00")</td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <a href="/Catalog/Detail/@f.Id">Details</a>
+            </td>
+        </tr>
+    </table>
+    <br>
+}

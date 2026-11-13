@@ -1,0 +1,18 @@
+@model CategoryVM
+
+@{
+    ViewBag.Title = "Category | Insert";
+}
+
+<form method="post" class="form">
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <label asp-for="Name"></label>
+    <input asp-for="Name" data-trim autofocus>
+    <span asp-validation-for="Name"></span>
+
+    <section>
+        <button>Submit</button>
+        <button type="reset">Reset</button>
+    </section>
+</form>

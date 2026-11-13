@@ -1,0 +1,36 @@
+@model Facility
+
+@{
+    ViewBag.Title = "Catalog | Detail";
+}
+
+<table class="table detail">
+    <tr>
+        <th>Name</th>
+        <td>@Model.Name</td>
+    </tr>
+    <tr>
+        <th>Category</th>
+        <td>@Model.Category.Name</td>
+    </tr>
+    <tr>
+        <th>Location</th>
+        <td>@Model.Location</td>
+    </tr>
+    <tr>
+        <th>Capacity</th>
+        <td>@Model.Capacity</td>
+    </tr>
+    <tr>
+        <th>Hourly Rate</th>
+        <td>RM @Model.HourlyRate.ToString("0.00")</td>
+    </tr>
+    <tr>
+        <th>Peak Surcharge</th>
+        <td>RM @Model.PeakSurcharge.ToString("0.00")</td>
+    </tr>
+</table>
+
+<p>
+    <a href="/Catalog">Back to list</a>
+</p>

@@ -1,0 +1,41 @@
+@model IEnumerable<Facility>
+
+@{
+    ViewBag.Title = "Facility | Index";
+}
+
+<p>
+    <a href="/Facility/Insert">Insert</a>
+</p>
+
+<p>@Model.Count() record(s)</p>
+
+<table class="table">
+    <tr>
+        <th>Id</th>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Location</th>
+        <th>Capacity</th>
+        <th>Hourly Rate (RM)</th>
+        <th>Peak Surcharge (RM)</th>
+        <th></th>
+    </tr>
+
+    @foreach (var f in Model)
+    {
+        <tr>
+            <td>@f.Id</td>
+            <td>@f.Name</td>
+            <td>@f.Category.Name</td>
+            <td>@f.Location</td>
+            <td>@f.Capacity</td>
+            <td>@f.HourlyRate.ToString("0.00")</td>
+            <td>@f.PeakSurcharge.ToString("0.00")</td>
+            <td>
+                <button data-get="/Facility/Update/@f.Id">Update</button>
+                <button data-post="/Facility/Delete/@f.Id">Delete</button>
+            </td>
+        </tr>
+    }
+</table>
