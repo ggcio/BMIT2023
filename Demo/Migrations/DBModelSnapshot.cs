@@ -17,12 +17,12 @@ namespace Demo.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.0")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Demo.Models.Reservation", b =>
+            modelBuilder.Entity("Demo.Models.Booking", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -30,71 +30,186 @@ namespace Demo.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateOnly>("CheckIn")
-                        .HasColumnType("date");
+                    b.Property<DateTime?>("CheckedInAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateOnly>("CheckOut")
-                        .HasColumnType("date");
+                    b.Property<DateTime?>("HoldExpiresAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("MemberEmail")
                         .IsRequired()
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<bool>("Paid")
-                        .HasColumnType("bit");
-
                     b.Property<decimal>("Price")
                         .HasPrecision(6, 2)
                         .HasColumnType("decimal(6,2)");
 
-                    b.Property<string>("RoomId")
+                    b.Property<string>("RefundStatus")
                         .IsRequired()
-                        .HasColumnType("nvarchar(4)");
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<int>("TimeSlotId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("MemberEmail");
 
-                    b.HasIndex("RoomId");
+                    b.HasIndex("TimeSlotId");
 
-                    b.ToTable("Reservations");
+                    b.ToTable("Bookings");
                 });
 
-            modelBuilder.Entity("Demo.Models.Room", b =>
+            modelBuilder.Entity("Demo.Models.Category", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasMaxLength(4)
-                        .HasColumnType("nvarchar(4)");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.Property<string>("TypeId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(1)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TypeId");
-
-                    b.ToTable("Rooms");
-                });
-
-            modelBuilder.Entity("Demo.Models.Type", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(1)
-                        .HasColumnType("nvarchar(1)");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<decimal>("Price")
+                    b.HasKey("Id");
+
+                    b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("Demo.Models.Facility", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("HourlyRate")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("PeakSurcharge")
                         .HasPrecision(6, 2)
                         .HasColumnType("decimal(6,2)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Types");
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("Facilities");
+                });
+
+            modelBuilder.Entity("Demo.Models.FacilityPhoto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("FacilityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FacilityId");
+
+                    b.ToTable("FacilityPhotos");
+                });
+
+            modelBuilder.Entity("Demo.Models.Payment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<int>("BookingId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("StripeReference")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId")
+                        .IsUnique();
+
+                    b.ToTable("Payments");
+                });
+
+            modelBuilder.Entity("Demo.Models.TimeSlot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<int>("FacilityId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsPeak")
+                        .HasColumnType("bit");
+
+                    b.Property<TimeOnly>("StartTime")
+                        .HasColumnType("time");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FacilityId");
+
+                    b.ToTable("TimeSlots");
                 });
 
             modelBuilder.Entity("Demo.Models.User", b =>
@@ -108,13 +223,36 @@ namespace Demo.Migrations
                         .HasMaxLength(8)
                         .HasColumnType("nvarchar(8)");
 
+                    b.Property<bool>("EmailVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("int");
+
                     b.Property<string>("Hash")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<bool>("IsBlocked")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LockedUntil")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("ResetExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResetToken")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("VerifyToken")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -122,7 +260,7 @@ namespace Demo.Migrations
 
                     b.ToTable("Users");
 
-                    b.HasDiscriminator().HasValue("User");
+                    b.HasDiscriminator<string>("Discriminator").HasValue("User");
 
                     b.UseTphMappingStrategy();
                 });
@@ -130,6 +268,9 @@ namespace Demo.Migrations
             modelBuilder.Entity("Demo.Models.Admin", b =>
                 {
                     b.HasBaseType("Demo.Models.User");
+
+                    b.Property<bool>("IsSuperAdmin")
+                        .HasColumnType("bit");
 
                     b.HasDiscriminator().HasValue("Admin");
                 });
@@ -143,52 +284,110 @@ namespace Demo.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("ReviewNote")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("StudentId")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("StudentStatus")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
                     b.HasDiscriminator().HasValue("Member");
                 });
 
-            modelBuilder.Entity("Demo.Models.Reservation", b =>
+            modelBuilder.Entity("Demo.Models.Booking", b =>
                 {
                     b.HasOne("Demo.Models.Member", "Member")
-                        .WithMany("Reservations")
+                        .WithMany("Bookings")
                         .HasForeignKey("MemberEmail")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Demo.Models.Room", "Room")
-                        .WithMany("Reservations")
-                        .HasForeignKey("RoomId")
+                    b.HasOne("Demo.Models.TimeSlot", "TimeSlot")
+                        .WithMany("Bookings")
+                        .HasForeignKey("TimeSlotId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Member");
 
-                    b.Navigation("Room");
+                    b.Navigation("TimeSlot");
                 });
 
-            modelBuilder.Entity("Demo.Models.Room", b =>
+            modelBuilder.Entity("Demo.Models.Facility", b =>
                 {
-                    b.HasOne("Demo.Models.Type", "Type")
-                        .WithMany("Rooms")
-                        .HasForeignKey("TypeId")
+                    b.HasOne("Demo.Models.Category", "Category")
+                        .WithMany("Facilities")
+                        .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Type");
+                    b.Navigation("Category");
                 });
 
-            modelBuilder.Entity("Demo.Models.Room", b =>
+            modelBuilder.Entity("Demo.Models.FacilityPhoto", b =>
                 {
-                    b.Navigation("Reservations");
+                    b.HasOne("Demo.Models.Facility", "Facility")
+                        .WithMany("Photos")
+                        .HasForeignKey("FacilityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Facility");
                 });
 
-            modelBuilder.Entity("Demo.Models.Type", b =>
+            modelBuilder.Entity("Demo.Models.Payment", b =>
                 {
-                    b.Navigation("Rooms");
+                    b.HasOne("Demo.Models.Booking", "Booking")
+                        .WithOne("Payment")
+                        .HasForeignKey("Demo.Models.Payment", "BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
+                });
+
+            modelBuilder.Entity("Demo.Models.TimeSlot", b =>
+                {
+                    b.HasOne("Demo.Models.Facility", "Facility")
+                        .WithMany("TimeSlots")
+                        .HasForeignKey("FacilityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Facility");
+                });
+
+            modelBuilder.Entity("Demo.Models.Booking", b =>
+                {
+                    b.Navigation("Payment");
+                });
+
+            modelBuilder.Entity("Demo.Models.Category", b =>
+                {
+                    b.Navigation("Facilities");
+                });
+
+            modelBuilder.Entity("Demo.Models.Facility", b =>
+                {
+                    b.Navigation("Photos");
+
+                    b.Navigation("TimeSlots");
+                });
+
+            modelBuilder.Entity("Demo.Models.TimeSlot", b =>
+                {
+                    b.Navigation("Bookings");
                 });
 
             modelBuilder.Entity("Demo.Models.Member", b =>
                 {
-                    b.Navigation("Reservations");
+                    b.Navigation("Bookings");
                 });
 #pragma warning restore 612, 618
         }

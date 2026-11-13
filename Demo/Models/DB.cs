@@ -13,9 +13,12 @@ public class DB(DbContextOptions options) : DbContext(options)
     public DbSet<Admin> Admins { get; set; }
     public DbSet<Member> Members { get; set; }
 
-    public DbSet<Type> Types { get; set; }
-    public DbSet<Room> Rooms { get; set; }
-    public DbSet<Reservation> Reservations { get; set; }
+    public DbSet<Category> Categories { get; set; }
+    public DbSet<Facility> Facilities { get; set; }
+    public DbSet<FacilityPhoto> FacilityPhotos { get; set; }
+    public DbSet<TimeSlot> TimeSlots { get; set; }
+    public DbSet<Booking> Bookings { get; set; }
+    public DbSet<Payment> Payments { get; set; }
 }
 
 // Entity Classes -------------------------------------------------------------
@@ -29,12 +32,27 @@ public class User
     [MaxLength(100)]
     public string Name { get; set; }
 
+    // Login blocking after 3 failed attempts
+    public int FailedAttempts { get; set; }
+    public DateTime? LockedUntil { get; set; }
+
+    // Blocked by an admin (or by the SuperAdmin for admin accounts)
+    public bool IsBlocked { get; set; }
+
+    // Email verification and password reset token links
+    public bool EmailVerified { get; set; }
+    [MaxLength(100)]
+    public string? VerifyToken { get; set; }
+    [MaxLength(100)]
+    public string? ResetToken { get; set; }
+    public DateTime? ResetExpiresAt { get; set; }
+
     public string Role => GetType().Name;
 }
 
 public class Admin : User
 {
-
+    public bool IsSuperAdmin { get; set; }
 }
 
 public class Member : User
@@ -42,59 +60,151 @@ public class Member : User
     [MaxLength(100)]
     public string PhotoURL { get; set; }
 
-    // Navigation Properties
-    public List<Reservation> Reservations { get; set; } = [];
-}
-
-// Type, Room, Reservation
-
-public class Type
-{
-    [Key, MaxLength(1)]
-    public string Id { get; set; }
-
-    [MaxLength(100)]
-    public string Name { get; set; }
-
-    [Precision(6, 2)]
-    public decimal Price { get; set; }
+    // Student status: None, Pending, Approved, Rejected
+    [MaxLength(20)]
+    public string? StudentId { get; set; }
+    [MaxLength(10)]
+    public string StudentStatus { get; set; } = "None";
+    [MaxLength(200)]
+    public string? ReviewNote { get; set; }
 
     // Navigation Properties
-    public List<Room> Rooms { get; set; } = [];
+    public List<Booking> Bookings { get; set; } = [];
 }
 
-public class Room
-{
-    [Key, MaxLength(4)]
-    public string Id { get; set; }
+// Category, Facility, FacilityPhoto, TimeSlot
 
-    // Foreign Keys
-    public string TypeId { get; set; }
-
-    // Navigation Properties
-    public Type Type { get; set; }
-    public List<Reservation> Reservations { get; set; } = [];
-}
-
-public class Reservation
+public class Category
 {
     [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
 
-    public DateOnly CheckIn { get; set; }
+    [MaxLength(100)]
+    public string Name { get; set; }
 
-    public DateOnly CheckOut { get; set; }
+    // Navigation Properties
+    public List<Facility> Facilities { get; set; } = [];
+}
 
+public class Facility
+{
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
+
+    [MaxLength(100)]
+    public string Name { get; set; }
+
+    [MaxLength(100)]
+    public string Location { get; set; }
+
+    public int Capacity { get; set; }
+
+    [Precision(6, 2)]
+    public decimal HourlyRate { get; set; }
+
+    [Precision(6, 2)]
+    public decimal PeakSurcharge { get; set; }
+
+    // Foreign Keys
+    public int CategoryId { get; set; }
+
+    // Navigation Properties
+    public Category Category { get; set; }
+    public List<FacilityPhoto> Photos { get; set; } = [];
+    public List<TimeSlot> TimeSlots { get; set; } = [];
+}
+
+public class FacilityPhoto
+{
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
+
+    [MaxLength(100)]
+    public string FileName { get; set; }
+
+    // Foreign Keys
+    public int FacilityId { get; set; }
+
+    // Navigation Properties
+    public Facility Facility { get; set; }
+}
+
+public class TimeSlot
+{
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
+
+    public DateOnly Date { get; set; }
+
+    public TimeOnly StartTime { get; set; }
+
+    public TimeOnly EndTime { get; set; }
+
+    public bool IsPeak { get; set; }
+
+    // Foreign Keys
+    public int FacilityId { get; set; }
+
+    // Navigation Properties
+    public Facility Facility { get; set; }
+    public List<Booking> Bookings { get; set; } = [];
+}
+
+// Booking, Payment
+
+public class Booking
+{
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
+
+    // Price that applied when the booking was made (0 for students)
     [Precision(6, 2)]
     public decimal Price { get; set; }
 
-    public bool Paid { get; set; }
+    // Pending, Confirmed, Cancelled
+    [MaxLength(10)]
+    public string Status { get; set; }
 
-    // Foreign Keys (MemberEmail, RoomId)
+    // A pending booking holds its capacity until this time (15 minutes)
+    public DateTime? HoldExpiresAt { get; set; }
+
+    // None, RefundDue, Refunded
+    [MaxLength(10)]
+    public string RefundStatus { get; set; } = "None";
+
+    public DateTime? CheckedInAt { get; set; }
+
+    // Foreign Keys (MemberEmail, TimeSlotId)
     public string MemberEmail { get; set; }
-    public string RoomId { get; set; }
+    public int TimeSlotId { get; set; }
 
     // Navigation Properties
     public Member Member { get; set; }
-    public Room Room { get; set; }
+    public TimeSlot TimeSlot { get; set; }
+    public Payment? Payment { get; set; }
+}
+
+public class Payment
+{
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
+
+    [Precision(6, 2)]
+    public decimal Amount { get; set; }
+
+    // Stripe Checkout session id
+    [MaxLength(200)]
+    public string StripeReference { get; set; }
+
+    // Pending, Paid, Failed
+    [MaxLength(10)]
+    public string Status { get; set; }
+
+    public DateTime? PaidAt { get; set; }
+
+    // Foreign Keys
+    public int BookingId { get; set; }
+
+    // Navigation Properties
+    public Booking Booking { get; set; }
 }
