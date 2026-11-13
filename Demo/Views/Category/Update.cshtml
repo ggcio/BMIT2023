@@ -1,0 +1,25 @@
+@model CategoryVM
+
+@{
+    ViewBag.Title = "Category | Update";
+}
+
+<form method="post" class="form">
+    <div asp-validation-summary="ModelOnly"></div>
+
+    @* Hidden Id lets the Remote CheckName call skip this category *@
+    <input type="hidden" asp-for="Id">
+
+    <label asp-for="Id"></label>
+    <b>@Model?.Id</b>
+    <br>
+
+    <label asp-for="Name"></label>
+    <input asp-for="Name" data-trim autofocus>
+    <span asp-validation-for="Name"></span>
+
+    <section>
+        <button>Submit</button>
+        <button type="reset">Reset</button>
+    </section>
+</form>

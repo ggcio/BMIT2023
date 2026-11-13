@@ -1,0 +1,40 @@
+@model FacilityVM
+
+@{
+    ViewBag.Title = "Facility | Insert";
+}
+
+<form method="post" class="form">
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <label asp-for="Name"></label>
+    <input asp-for="Name" data-trim autofocus>
+    <span asp-validation-for="Name"></span>
+
+    <label asp-for="CategoryId"></label>
+    <select asp-for="CategoryId" asp-items="ViewBag.CategoryList">
+        <option value="">-- Select One --</option>
+    </select>
+    <span asp-validation-for="CategoryId"></span>
+
+    <label asp-for="Location"></label>
+    <input asp-for="Location" data-trim>
+    <span asp-validation-for="Location"></span>
+
+    <label asp-for="Capacity"></label>
+    <input asp-for="Capacity">
+    <span asp-validation-for="Capacity"></span>
+
+    <label asp-for="HourlyRate"></label>
+    <input asp-for="HourlyRate">
+    <span asp-validation-for="HourlyRate"></span>
+
+    <label asp-for="PeakSurcharge"></label>
+    <input asp-for="PeakSurcharge">
+    <span asp-validation-for="PeakSurcharge"></span>
+
+    <section>
+        <button>Submit</button>
+        <button type="reset">Reset</button>
+    </section>
+</form>
