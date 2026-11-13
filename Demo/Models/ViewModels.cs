@@ -81,3 +81,12 @@ public class ResetPasswordVM
     [EmailAddress]
     public string Email { get; set; }
 }
+
+// Booking
+
+public class BookingVM
+{
+    [Range(1, int.MaxValue)]
+    [DisplayName("Time Slot")]
+    public int SlotId { get; set; }
+}

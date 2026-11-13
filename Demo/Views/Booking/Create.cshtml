@@ -1,0 +1,44 @@
+@model BookingVM
+
+@{
+    ViewBag.Title = "Booking | Create";
+    TimeSlot slot = ViewBag.Slot;
+    decimal price = ViewBag.Price;
+    bool isStudent = ViewBag.IsStudent;
+}
+
+<table class="table detail">
+    <tr>
+        <th>Facility</th>
+        <td>@slot.Facility.Name</td>
+    </tr>
+    <tr>
+        <th>Location</th>
+        <td>@slot.Facility.Location</td>
+    </tr>
+    <tr>
+        <th>Date</th>
+        <td>@slot.Date.ToString("dd MMM yyyy (ddd)")</td>
+    </tr>
+    <tr>
+        <th>Time</th>
+        <td>@slot.StartTime.ToString("HH:mm") - @slot.EndTime.ToString("HH:mm") @(slot.IsPeak ? "(Peak)" : "")</td>
+    </tr>
+    <tr>
+        <th>Price</th>
+        <td>@(isStudent ? "Free (Student)" : $"RM {price:F2}")</td>
+    </tr>
+</table>
+
+<br>
+
+<form class="form" method="post">
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <input asp-for="SlotId" type="hidden">
+    <span asp-validation-for="SlotId"></span>
+
+    <section>
+        <button>@(isStudent ? "Confirm Booking" : "Book and Pay")</button>
+    </section>
+</form>
