@@ -36,7 +36,7 @@
             <td>@b.TimeSlot.StartTime.ToString("HH:mm") - @b.TimeSlot.EndTime.ToString("HH:mm")</td>
             <td>@b.Price.ToString("0.00")</td>
             <td>@status</td>
-            <td>@b.RefundStatus</td>
+            <td>@(b.RefundStatus == "RefundDue" ? "Refund due" : b.RefundStatus)</td>
             <td>@(b.CheckedInAt?.ToString("dd MMM yyyy HH:mm") ?? "-")</td>
             <td>
                 <button data-get="/AdminBooking/Detail/@b.Id">Detail</button>

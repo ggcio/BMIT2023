@@ -27,7 +27,7 @@
     </tr>
     <tr>
         <th>Refund Status</th>
-        <td>@Model.RefundStatus</td>
+        <td>@(Model.RefundStatus == "RefundDue" ? "Refund due" : Model.RefundStatus)</td>
     </tr>
     <tr>
         <th>Checked In At</th>
@@ -104,6 +104,17 @@ else
         </tr>
     </table>
 }
+
+<p>
+    @if ((Model.Status == "Pending" || Model.Status == "Confirmed") && Model.CheckedInAt == null)
+    {
+        <button data-post="/AdminBooking/Cancel/@Model.Id">Cancel Booking</button>
+    }
+    @if (Model.RefundStatus == "RefundDue")
+    {
+        <button data-post="/AdminBooking/Refunded/@Model.Id">Mark Refunded</button>
+    }
+</p>
 
 <p>
     <a href="/AdminBooking">Back to list</a>

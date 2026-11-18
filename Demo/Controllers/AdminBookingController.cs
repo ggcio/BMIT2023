@@ -63,4 +63,63 @@ public class AdminBookingController(DB db) : Controller
 
         return View(m);
     }
+
+    // POST: AdminBooking/Cancel/{id}
+    [HttpPost]
+    public IActionResult Cancel(int id)
+    {
+        var b = db.Bookings
+                  .Include(b => b.Payment)
+                  .FirstOrDefault(b => b.Id == id);
+
+        if (b == null)
+        {
+            TempData["Info"] = "Booking not found.";
+        }
+        else if ((b.Status == "Pending" || b.Status == "Confirmed") && b.CheckedInAt == null)
+        {
+            b.Status = "Cancelled";
+            b.HoldExpiresAt = null;
+
+            // The member paid, so an admin must refund outside the system
+            if (b.Payment?.Status == "Paid")
+            {
+                b.RefundStatus = "RefundDue";
+            }
+            db.SaveChanges();
+
+            TempData["Info"] = "Booking cancelled.";
+        }
+        else
+        {
+            TempData["Info"] = "This booking cannot be cancelled.";
+        }
+
+        return RedirectToAction("Detail", new { id });
+    }
+
+    // POST: AdminBooking/Refunded/{id}
+    [HttpPost]
+    public IActionResult Refunded(int id)
+    {
+        var b = db.Bookings.Find(id);
+
+        if (b == null)
+        {
+            TempData["Info"] = "Booking not found.";
+        }
+        else if (b.RefundStatus == "RefundDue")
+        {
+            b.RefundStatus = "Refunded";
+            db.SaveChanges();
+
+            TempData["Info"] = "Refund marked as paid.";
+        }
+        else
+        {
+            TempData["Info"] = "No refund is due for this booking.";
+        }
+
+        return RedirectToAction("Detail", new { id });
+    }
 }
