@@ -82,46 +82,11 @@ public class ResetPasswordVM
     public string Email { get; set; }
 }
 
-public class CategoryVM
+// Booking
+
+public class BookingVM
 {
-    public int? Id { get; set; }
-
-    [Required(ErrorMessage = "{0} is required.")]
-    [StringLength(100, ErrorMessage = "{0} cannot exceed {1} characters.")]
-    [Remote("CheckName", "Category", AdditionalFields = "Id", ErrorMessage = "Duplicated {0}.")]
-    public string Name { get; set; }
-}
-
-public class FacilityVM
-{
-    public int? Id { get; set; }
-
-    [Required(ErrorMessage = "{0} is required.")]
-    [StringLength(100, ErrorMessage = "{0} cannot exceed {1} characters.")]
-    [Remote("CheckName", "Facility", AdditionalFields = "Id", ErrorMessage = "Duplicated {0}.")]
-    public string Name { get; set; }
-
-    [Required(ErrorMessage = "{0} is required.")]
-    [StringLength(100, ErrorMessage = "{0} cannot exceed {1} characters.")]
-    public string Location { get; set; }
-
-    [Required(ErrorMessage = "{0} is required.")]
-    [Range(1, 200, ErrorMessage = "{0} must be between {1} and {2}.")]
-    public int Capacity { get; set; }
-
-    [Required(ErrorMessage = "{0} is required.")]
-    [Range(0.01, 9999.99, ErrorMessage = "{0} must be between {1} and {2}.")]
-    [RegularExpression(@"\d+(\.\d{1,2})?", ErrorMessage = "{0} can have at most 2 decimal places.")]
-    [DisplayName("Hourly Rate (RM)")]
-    public decimal HourlyRate { get; set; }
-
-    [Required(ErrorMessage = "{0} is required.")]
-    [Range(0, 9999.99, ErrorMessage = "{0} must be between {1} and {2}.")]
-    [RegularExpression(@"\d+(\.\d{1,2})?", ErrorMessage = "{0} can have at most 2 decimal places.")]
-    [DisplayName("Peak Surcharge (RM)")]
-    public decimal PeakSurcharge { get; set; }
-
-    [Required(ErrorMessage = "Please select a category.")]
-    [DisplayName("Category")]
-    public int CategoryId { get; set; }
+    [Range(1, int.MaxValue)]
+    [DisplayName("Time Slot")]
+    public int SlotId { get; set; }
 }

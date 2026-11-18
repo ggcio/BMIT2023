@@ -1,0 +1,50 @@
+@model Booking
+
+@{
+    ViewBag.Title = "Booking | Confirmation";
+}
+
+<table class="table detail">
+    <tr>
+        <th>Booking ID</th>
+        <td>@Model.Id</td>
+    </tr>
+    <tr>
+        <th>Facility</th>
+        <td>@Model.TimeSlot.Facility.Name</td>
+    </tr>
+    <tr>
+        <th>Location</th>
+        <td>@Model.TimeSlot.Facility.Location</td>
+    </tr>
+    <tr>
+        <th>Date</th>
+        <td>@Model.TimeSlot.Date.ToString("dd MMM yyyy (ddd)")</td>
+    </tr>
+    <tr>
+        <th>Time</th>
+        <td>@Model.TimeSlot.StartTime.ToString("HH:mm") - @Model.TimeSlot.EndTime.ToString("HH:mm")</td>
+    </tr>
+    <tr>
+        <th>Price</th>
+        <td>@(Model.Price == 0 ? "Free (Student)" : $"RM {Model.Price:F2}")</td>
+    </tr>
+    <tr>
+        <th>Status</th>
+        <td>@Model.Status</td>
+    </tr>
+</table>
+
+@if (Model.Status == "Pending" && Model.HoldExpiresAt > DateTime.Now)
+{
+    <p>
+        Please pay before @Model.HoldExpiresAt?.ToString("HH:mm").
+        <a href="/Booking/Pay/@Model.Id">Pay now</a>
+    </p>
+}
+
+@if (Model.Status == "Confirmed")
+{
+    <p>Show this QR code at check-in.</p>
+    <img src="/Booking/QrCode/@Model.Id" alt="QR code">
+}
