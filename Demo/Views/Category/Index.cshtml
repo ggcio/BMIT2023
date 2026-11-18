@@ -1,0 +1,33 @@
+@model IEnumerable<Category>
+
+@{
+    ViewBag.Title = "Category | Index";
+}
+
+<p>
+    <a href="/Category/Insert">Insert</a>
+</p>
+
+<p>@Model.Count() record(s)</p>
+
+<table class="table">
+    <tr>
+        <th>Id</th>
+        <th>Name</th>
+        <th>Facilities</th>
+        <th></th>
+    </tr>
+
+    @foreach (var c in Model)
+    {
+        <tr>
+            <td>@c.Id</td>
+            <td>@c.Name</td>
+            <td>@c.Facilities.Count</td>
+            <td>
+                <button data-get="/Category/Update/@c.Id">Update</button>
+                <button data-post="/Category/Delete/@c.Id">Delete</button>
+            </td>
+        </tr>
+    }
+</table>
