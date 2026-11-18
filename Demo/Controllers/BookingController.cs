@@ -67,6 +67,23 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
                                       b.MemberEmail == User.Identity!.Name);
     }
 
+    // The logged-in member's Confirmed or still-held Pending booking for this slot
+    private Booking? GetOwnBooking(int slotId)
+    {
+        return db.Bookings
+                 .FirstOrDefault(b => b.TimeSlotId == slotId &&
+                                      b.MemberEmail == User.Identity!.Name &&
+                                      (b.Status == "Confirmed" ||
+                                       (b.Status == "Pending" && b.HoldExpiresAt > DateTime.Now)));
+    }
+
+    private string OwnBookingMessage(Booking b)
+    {
+        return b.Status == "Pending"
+            ? "You already have a pending booking for this slot. Please complete payment."
+            : "You have already booked this slot.";
+    }
+
     private SessionService GetSessionService()
     {
         return new SessionService(new Stripe.StripeClient(cf["Stripe:SecretKey"]));
@@ -135,6 +152,14 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
     [Authorize(Roles = "Member")]
     public IActionResult Create(int slotId)
     {
+        var own = GetOwnBooking(slotId);
+
+        if (own != null)
+        {
+            TempData["Info"] = OwnBookingMessage(own);
+            return RedirectToAction("Confirmation", new { own.Id });
+        }
+
         var slot = GetSlot(slotId);
         var error = SlotError(slot);
 
@@ -158,6 +183,14 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
     [HttpPost]
     public IActionResult Create(BookingVM vm)
     {
+        var own = GetOwnBooking(vm.SlotId);
+
+        if (own != null)
+        {
+            TempData["Info"] = OwnBookingMessage(own);
+            return RedirectToAction("Confirmation", new { own.Id });
+        }
+
         // Re-check the slot, it may have become full since the page was loaded
         var slot = GetSlot(vm.SlotId);
         var error = ModelState.IsValid ? SlotError(slot) : "Invalid time slot.";
