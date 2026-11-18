@@ -1,0 +1,17 @@
+@model ResendVerificationVM
+
+@{
+    ViewBag.Title = "Account | Resend Verification";
+}
+
+<form class="form" method="post">
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <label asp-for="Email"></label>
+    <input asp-for="Email" autofocus>
+    <span asp-validation-for="Email"></span>
+
+    <button type="submit">Resend Verification Email</button>
+</form>
+
+<p><a href="/Account/Login">Return to login</a></p>

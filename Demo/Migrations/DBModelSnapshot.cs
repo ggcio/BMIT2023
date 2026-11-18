@@ -218,21 +218,11 @@ namespace Demo.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasMaxLength(8)
-                        .HasColumnType("nvarchar(8)");
-
                     b.Property<bool>("EmailVerified")
                         .HasColumnType("bit");
 
                     b.Property<int>("FailedAttempts")
                         .HasColumnType("int");
-
-                    b.Property<string>("Hash")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("IsBlocked")
                         .HasColumnType("bit");
@@ -245,12 +235,28 @@ namespace Demo.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PhotoURL")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<DateTime?>("ResetExpiresAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ResetToken")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("VerifyExpiresAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("VerifyToken")
                         .HasMaxLength(100)
@@ -259,50 +265,11 @@ namespace Demo.Migrations
                     b.HasKey("Email");
 
                     b.ToTable("Users");
-
-                    b.HasDiscriminator<string>("Discriminator").HasValue("User");
-
-                    b.UseTphMappingStrategy();
-                });
-
-            modelBuilder.Entity("Demo.Models.Admin", b =>
-                {
-                    b.HasBaseType("Demo.Models.User");
-
-                    b.Property<bool>("IsSuperAdmin")
-                        .HasColumnType("bit");
-
-                    b.HasDiscriminator().HasValue("Admin");
-                });
-
-            modelBuilder.Entity("Demo.Models.Member", b =>
-                {
-                    b.HasBaseType("Demo.Models.User");
-
-                    b.Property<string>("PhotoURL")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ReviewNote")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("StudentId")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("StudentStatus")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.HasDiscriminator().HasValue("Member");
                 });
 
             modelBuilder.Entity("Demo.Models.Booking", b =>
                 {
-                    b.HasOne("Demo.Models.Member", "Member")
+                    b.HasOne("Demo.Models.User", "User")
                         .WithMany("Bookings")
                         .HasForeignKey("MemberEmail")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -314,9 +281,9 @@ namespace Demo.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Member");
-
                     b.Navigation("TimeSlot");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Demo.Models.Facility", b =>
@@ -385,7 +352,7 @@ namespace Demo.Migrations
                     b.Navigation("Bookings");
                 });
 
-            modelBuilder.Entity("Demo.Models.Member", b =>
+            modelBuilder.Entity("Demo.Models.User", b =>
                 {
                     b.Navigation("Bookings");
                 });

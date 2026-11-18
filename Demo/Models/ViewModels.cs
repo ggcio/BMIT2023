@@ -82,6 +82,29 @@ public class ResetPasswordVM
     public string Email { get; set; }
 }
 
+public class ResetPasswordTokenVM
+{
+    public string Token { get; set; }
+
+    [StringLength(100, MinimumLength = 5)]
+    [DataType(DataType.Password)]
+    [DisplayName("New Password")]
+    public string New { get; set; }
+
+    [StringLength(100, MinimumLength = 5)]
+    [Compare("New")]
+    [DataType(DataType.Password)]
+    [DisplayName("Confirm Password")]
+    public string Confirm { get; set; }
+}
+
+public class ResendVerificationVM
+{
+    [StringLength(100)]
+    [EmailAddress]
+    public string Email { get; set; }
+}
+
 public class CategoryVM
 {
     public int? Id { get; set; }

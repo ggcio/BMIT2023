@@ -19,17 +19,17 @@ DBCC CHECKIDENT ('FacilityPhotos', RESEED, 0);
 DBCC CHECKIDENT ('Facilities', RESEED, 0);
 DBCC CHECKIDENT ('Categories', RESEED, 0);
 
--- 3. Users (Discriminator = Admin or Member)
+-- 3. Users (Role: 0 = student, 1 = public, 2 = admin)
 DECLARE @hash NVARCHAR(100) = 'AQAAAAIAAYagAAAAEGyBGBzs6LQiyNF3QVuXc6Cz0yVIGikGDI6GdsXMFG6eDzkN0617JG54Tz/Zp/V35g==';
 
-INSERT INTO Users (Email, Hash, Name, FailedAttempts, IsBlocked, EmailVerified, Discriminator, IsSuperAdmin, PhotoURL, StudentId, StudentStatus)
+INSERT INTO Users (Email, Password, Name, Role, FailedAttempts, IsBlocked, EmailVerified, PhotoURL)
 VALUES
-('sa@gmail.com', @hash, 'Super Admin',    0, 0, 1, 'Admin',  1,    NULL,     NULL,        NULL),
-('a1@gmail.com', @hash, 'Jennie Kim',     0, 0, 1, 'Admin',  0,    NULL,     NULL,        NULL),
-('a2@gmail.com', @hash, 'Kim Ji-Soo',     0, 0, 1, 'Admin',  0,    NULL,     NULL,        NULL),
-('m1@gmail.com', @hash, 'Lalisa Manoban', 0, 0, 1, 'Member', NULL, 'm1.jpg', NULL,        'None'),
-('m2@gmail.com', @hash, 'Roseanne Park',  0, 0, 1, 'Member', NULL, 'm2.jpg', '24WMR00001', 'Approved'),
-('m3@gmail.com', @hash, 'Tan Wei Ming',   0, 0, 1, 'Member', NULL, 'photo.jpg', '24WMR00002', 'Pending');
+('sa@gmail.com', @hash, 'Super Admin',    2, 0, 0, 1, 'admin.jpg'),
+('a1@gmail.com', @hash, 'Jennie Kim',     2, 0, 0, 1, 'admin.jpg'),
+('a2@gmail.com', @hash, 'Kim Ji-Soo',     2, 0, 0, 1, 'admin.jpg'),
+('m1@gmail.com', @hash, 'Lalisa Manoban', 1, 0, 0, 1, 'm1.jpg'),
+('student@student.tarc.edu.my', @hash, 'Roseanne Park',  0, 0, 0, 1, 'm2.jpg'),
+('m3@gmail.com', @hash, 'Tan Wei Ming',   1, 0, 0, 1, 'photo.jpg');
 
 -- 4. Categories
 DECLARE @badminton INT, @futsal INT, @gym INT;
@@ -91,7 +91,7 @@ SELECT @slot = Id FROM TimeSlots
 WHERE FacilityId = @court1 AND Date = DATEADD(DAY, 1, @today) AND StartTime = '10:00';
 
 INSERT INTO Bookings (Price, Status, HoldExpiresAt, RefundStatus, CheckedInAt, MemberEmail, TimeSlotId)
-VALUES (0.00, 'Confirmed', NULL, 'None', NULL, 'm2@gmail.com', @slot);
+VALUES (0.00, 'Confirmed', NULL, 'None', NULL, 'student@student.tarc.edu.my', @slot);
 
 -- Public confirmed booking with paid payment: Court 1, tomorrow 19:00 (peak, 10 + 5)
 SELECT @slot = Id FROM TimeSlots

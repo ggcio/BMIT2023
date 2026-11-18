@@ -1,0 +1,48 @@
+@model IEnumerable<User>
+
+@{
+    ViewBag.Title = "Admin | Manage Users";
+}
+
+<h2>Manage Users</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Failed Attempts</th>
+            <th>Account Status</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            var isTemporarilyLocked = user.LockedUntil.HasValue && user.LockedUntil.Value > DateTime.UtcNow;
+            var status = user.IsBlocked
+                ? "Permanently blocked"
+                : isTemporarilyLocked
+                    ? $"Temporarily locked until {user.LockedUntil:yyyy-MM-dd HH:mm:ss} UTC"
+                    : "Active";
+
+            <tr>
+                <td>@user.Email</td>
+                <td>@user.Name</td>
+                <td>@user.Role</td>
+                <td>@user.FailedAttempts</td>
+                <td>@status</td>
+                <td>
+                    @if (user.IsBlocked || isTemporarilyLocked || user.FailedAttempts > 0)
+                    {
+                        <form asp-action="Unblock" method="post">
+                            <input type="hidden" name="email" value="@user.Email">
+                            <button type="submit">Unblock and reset</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
