@@ -1,0 +1,81 @@
+================================================================================
+CAMPUS SPORTS FACILITY RESERVATION SYSTEM (BMIT2023)
+WORKLOAD SUMMARY FOR: DANIEL
+================================================================================
+
+1. TECHNICAL STACK & CONSTRAINTS
+--------------------------------------------------------------------------------
+- Framework: .NET 10, ASP.NET Core MVC, C#
+- Database: EF Core 10.x (Code-First with data annotations), SQL Server Express (.mdf)
+- Authentication: Manual cookie authentication + built-in PasswordHasher (DO NOT use ASP.NET Core Identity)
+- Client Libraries: jQuery 3.7.1 (not 4.x), jQuery Validate, Validation Unobtrusive, AJAX Unobtrusive (via LibMan)
+- Environment: Visual Studio 2026 Community + Claude Code (adhere strictly to shared CLAUDE.md)
+
+2. PRIORITY & TEAM COORDINATION TASKS
+--------------------------------------------------------------------------------
+[ ] Day-1 Team Session:
+    - Finalize entity classes (specifically User, Admin, Member) with Member 2 & Member 3.
+    - Agree on the initial migration, seed/sample data, shared layout/navigation, and booking route (/Booking/Create?slotId=).
+    - Note: Entities are frozen after this session; changes require a 3-way approved PR.
+[ ] "Login First" Priority:
+    - Build and merge basic cookie login FIRST so Member 2 and Member 3 can re-enable [Authorize] attributes for testing.
+[ ] Setup & Configuration:
+    - Help set up Captcha test keys and configure email sender settings (for email verification and password resets).
+[ ] Pull Request Reviews & Security Audit:
+    - Review and run Member 2's pull requests before merging.
+    - Perform a FINAL SECURITY PASS across EVERY controller in the project to ensure proper [Authorize] and role restrictions.
+[ ] Pre-Demo & Submission:
+    - Participate in the team code walkthrough 1 week before the demo (must be able to explain every file without notes).
+    - Contribute screenshots, test login credentials for the README, and sections for the short report.
+
+3. CORE MODULES (3 MODULES)
+--------------------------------------------------------------------------------
+MODULE 1: Security (Workload: Heavy)
+- Login & Logout: Implement manual cookie-based authentication.
+- Registration: Allow new users to register (with an optional Student ID field).
+- Password Security: Hash passwords using ASP.NET Core's built-in PasswordHasher.
+- Role-Based Access Control (RBAC): Enforce permissions for Super Admin, Admin, and Member roles.
+- Access Denied Page: Build a custom access-denied view for unauthorized URL access.
+
+MODULE 2: Admin and Member Maintenance (Workload: Medium)
+- Admin Account CRUD (Super Admin ONLY):
+  * Create, read, update, and delete Admin accounts.
+  * Enforce rule: Only the single seeded Super Admin can access this, and the Super Admin account itself cannot be edited or deleted in the UI.
+- Member Account CRUD:
+  * View, edit, delete, block, and unblock Member accounts.
+- Profile & Student Status Application (Member side):
+  * Allow Public members to update their profile and apply for Student status at any time by submitting a Student ID.
+  * Data structure: Store Student ID and Status (None, Pending, Approved, Rejected) directly on the Member entity (no extra roles/subclasses/tables).
+- Student Application Review (Admin side):
+  * Allow Admins to approve or reject pending student applications with a short review note/reason displayed to the member.
+  * Approved status grants free bookings for all future reservations.
+  * Rejected members must be allowed to re-apply.
+
+MODULE 3: Booking History - Member (Workload: Light)
+- Booking List & Details: Display the logged-in member's own booking history and individual booking details (including QR e-ticket/status).
+- Booking Cancellation: Implement cancellation logic based on member rules:
+  * Students: Can cancel at any time.
+  * Public Members: Can cancel up to 24 hours before the slot start time (marks booking as "Refund Due" for Admin processing).
+
+4. ADDITIONAL FEATURES (4 FEATURES)
+--------------------------------------------------------------------------------
+[ ] Login Blocking (Difficulty: Easy | Reference: Practical 7)
+    - Track failed login attempts and lock the user account after 3 consecutive failed attempts.
+[ ] Email Verification (Difficulty: Medium | Reference: Practical 8)
+    - Send an account verification email containing a unique token link upon registration.
+[ ] Password Reset (Difficulty: Medium | Reference: Practical 8)
+    - Implement a "Forgot Password" flow that sends a password reset token link via email.
+[ ] Captcha Integration (Difficulty: Medium | Reference: Self-study)
+    - Add Captcha to login/registration using test keys first (Note: Swap for another feature if it causes too many integration issues).
+
+5. DEFINITION OF DONE (QUALITY & TESTING CHECKLIST)
+--------------------------------------------------------------------------------
+Before any of Daniel's modules count as complete, they must pass peer review by Member 3 against these criteria:
+[ ] Client-side and server-side validation rejects empty, overly long, wrong-format, and duplicate inputs.
+[ ] All ViewModels use Data Annotations (plus custom validators where business rules require them).
+[ ] Every controller action has the proper [Authorize] or [Authorize(Roles = "...")] attribute; direct URL access by unauthorized users is blocked.
+[ ] Profile photo uploads reject invalid file types and oversized files.
+[ ] Update and Delete actions gracefully handle records that are already deleted or currently in use.
+[ ] Edge cases work properly (e.g., late cancellation blocked for Public members, unapproved students still charged Public rates).
+[ ] Sufficient sample data is seeded to demonstrate every page and state.
+================================================================================
