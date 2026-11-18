@@ -2,6 +2,8 @@
 
 ASP.NET Core MVC web system for a TARUMT group assignment (3 students). Built in Visual Studio 2026 Community on Windows. The tutor has approved the title and the team size.
 
+Repo layout: `CLAUDE.md` is at the repo root and the project is in `Demo/`. Paths in prompts such as `Models/DB.cs` are relative to `Demo/`.
+
 ## How to work (read first)
 
 These rules override your defaults. Follow the prompt exactly and keep the code simple.
@@ -88,8 +90,8 @@ Migrations are run by the student in the Package Manager Console, not by Claude 
 
 ## Reference docs
 
-Read these only when a prompt touches requirements, marking or scope. Do not load them otherwise.
+Read these only when a prompt needs them. Do not load them otherwise.
 
-- `docs/assignment-brief.md`
-- `docs/marking-rubric.md`
-- `docs/module-split.md`
+- The final plan (PDF) is in `Demo/docs/`.
+- Practical slides are in `Demo/docs/practicals/`. They are local only and git-ignored, so never commit them. When a prompt says "follow Practical N", read that PDF first. If it is missing, stop and ask.
+- The assignment brief and rubric are not in the repo. Do not assume what they say.
