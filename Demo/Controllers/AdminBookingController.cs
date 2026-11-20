@@ -116,6 +116,45 @@ public class AdminBookingController(DB db) : Controller
         return View(new CheckInVM());
     }
 
+    // GET: AdminBooking/Charts
+    public IActionResult Charts()
+    {
+        // Chart 1: Confirmed bookings per facility (every facility, 0 if none)
+        var facilities = db.Facilities
+                           .OrderBy(f => f.Id)
+                           .Select(f => new
+                           {
+                               f.Name,
+                               Count = f.TimeSlots.SelectMany(s => s.Bookings)
+                                                  .Count(b => b.Status == "Confirmed"),
+                           })
+                           .ToList();
+
+        ViewBag.FacilityLabels = facilities.Select(f => f.Name).ToList();
+        ViewBag.FacilityValues = facilities.Select(f => f.Count).ToList();
+
+        // Chart 2: revenue per day for the last 14 days (paid and not refunded)
+        var today = DateTime.Today;
+        var start = today.AddDays(-13);
+
+        var payments = db.Payments
+                         .Where(p => p.Status == "Paid" &&
+                                     p.Booking.RefundStatus == "None" &&
+                                     p.PaidAt >= start &&
+                                     p.PaidAt < today.AddDays(1))
+                         .Select(p => new { p.PaidAt, p.Amount })
+                         .ToList();
+
+        var days = Enumerable.Range(0, 14).Select(n => start.AddDays(n)).ToList();
+
+        ViewBag.RevenueLabels = days.Select(d => d.ToString("dd MMM")).ToList();
+        ViewBag.RevenueValues = days.Select(d => payments.Where(p => p.PaidAt!.Value.Date == d)
+                                                         .Sum(p => p.Amount))
+                                    .ToList();
+
+        return View();
+    }
+
     // POST: AdminBooking/Cancel/{id}
     [HttpPost]
     public IActionResult Cancel(int id)
