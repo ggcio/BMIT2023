@@ -76,6 +76,10 @@ else
                     else
                     {
                         <text>@s.SpotsLeft left</text>
+                        if (!User.IsInRole("admin"))
+                        {
+                            <a href="/Booking/Create?slotId=@s.Id">Book</a>
+                        }
                     }
                 </td>
             </tr>
