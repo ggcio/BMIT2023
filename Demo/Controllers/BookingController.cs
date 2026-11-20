@@ -49,9 +49,9 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
                  .FirstOrDefault(s => s.Id == slotId);
     }
 
-    private decimal GetPrice(TimeSlot slot, Member member)
+    private decimal GetPrice(TimeSlot slot, User user)
     {
-        if (member.StudentStatus == "Approved") return 0;
+        if (user.Role == UserRole.student) return 0;
 
         return slot.Facility.HourlyRate + (slot.IsPeak ? slot.Facility.PeakSurcharge : 0);
     }
@@ -103,14 +103,14 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
         var b = db.Bookings
                   .Include(b => b.TimeSlot)
                   .ThenInclude(s => s.Facility)
-                  .Include(b => b.Member)
+                  .Include(b => b.User)
                   .Include(b => b.Payment)
                   .First(b => b.Id == id);
-        var member = b.Member;
+        var user = b.User;
         var slot = b.TimeSlot;
 
         var mail = new MailMessage();
-        mail.To.Add(new MailAddress(member.Email, member.Name));
+        mail.To.Add(new MailAddress(user.Email, user.Name));
         mail.Subject = $"Booking Receipt #{b.Id}";
         mail.IsBodyHtml = true;
 
@@ -124,7 +124,7 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
         var paid = b.Payment?.PaidAt == null ? "" : $"<p>Paid At: {b.Payment.PaidAt:dd MMM yyyy HH:mm}</p>";
 
         mail.Body = $@"
-            <p>Dear {member.Name},</p>
+            <p>Dear {user.Name},</p>
             <p>Your booking is confirmed.</p>
             <p>Booking ID: {b.Id}</p>
             <p>Facility: {slot.Facility.Name}</p>
@@ -169,11 +169,11 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
             return Redirect("/");
         }
 
-        var member = db.Members.Find(User.Identity!.Name)!;
+        var user = db.Users.Find(User.Identity!.Name)!;
 
         ViewBag.Slot = slot;
-        ViewBag.Price = GetPrice(slot!, member);
-        ViewBag.IsStudent = member.StudentStatus == "Approved";
+        ViewBag.Price = GetPrice(slot!, user);
+        ViewBag.IsStudent = user.Role == UserRole.student;
 
         return View(new BookingVM { SlotId = slotId });
     }
@@ -201,15 +201,15 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
             return Redirect("/");
         }
 
-        var member = db.Members.Find(User.Identity!.Name)!;
-        bool isStudent = member.StudentStatus == "Approved";
+        var user = db.Users.Find(User.Identity!.Name)!;
+        bool isStudent = user.Role == UserRole.student;
 
         var booking = new Booking
         {
-            Price = GetPrice(slot!, member),
+            Price = GetPrice(slot!, user),
             Status = isStudent ? "Confirmed" : "Pending",
             HoldExpiresAt = isStudent ? null : DateTime.Now.AddMinutes(15),
-            MemberEmail = member.Email,
+            MemberEmail = user.Email,
             TimeSlotId = slot!.Id,
         };
         db.Bookings.Add(booking);

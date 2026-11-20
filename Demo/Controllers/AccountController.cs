@@ -179,7 +179,7 @@ public class AccountController(DB db,
                 Email = email,
                 Password = hp.HashPassword(vm.Password),
                 Name = vm.Name,
-                PhotoURL = hp.SavePhoto(vm.Photo, "photos"),
+                PhotoURL = vm.Photo == null ? null : hp.SavePhoto(vm.Photo, "photos"),
                 Role = IsStudentEmail(email) ? UserRole.student : UserRole.@public,
                 EmailVerified = false,
                 VerifyToken = token,
@@ -324,7 +324,11 @@ public class AccountController(DB db,
 
             if (vm.Photo != null)
             {
-                hp.DeletePhoto(m.PhotoURL, "photos");
+                if (m.PhotoURL != null)
+                {
+                    hp.DeletePhoto(m.PhotoURL, "photos");
+                }
+
                 m.PhotoURL = hp.SavePhoto(vm.Photo, "photos");
             }
 

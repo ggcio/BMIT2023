@@ -29,21 +29,18 @@ namespace Demo.Migrations
                 columns: table => new
                 {
                     Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Hash = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Password = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Role = table.Column<int>(type: "int", nullable: false),
+                    PhotoURL = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     FailedAttempts = table.Column<int>(type: "int", nullable: false),
                     LockedUntil = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsBlocked = table.Column<bool>(type: "bit", nullable: false),
                     EmailVerified = table.Column<bool>(type: "bit", nullable: false),
                     VerifyToken = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    VerifyExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ResetToken = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    ResetExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Discriminator = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: false),
-                    IsSuperAdmin = table.Column<bool>(type: "bit", nullable: true),
-                    PhotoURL = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    StudentId = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    StudentStatus = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
-                    ReviewNote = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true)
+                    ResetExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {

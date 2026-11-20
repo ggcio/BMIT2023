@@ -40,7 +40,7 @@ public class User
     public UserRole Role { get; set; } = UserRole.@public;
 
     [MaxLength(100)]
-    public string PhotoURL { get; set; }
+    public string? PhotoURL { get; set; }
 
     // Navigation Properties
     public List<Booking> Bookings { get; set; } = [];
