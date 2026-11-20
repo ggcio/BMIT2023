@@ -126,6 +126,39 @@ public class FacilityVM
     public int CategoryId { get; set; }
 }
 
+public class TimeSlotVM
+{
+    public int? Id { get; set; }
+
+    [Required(ErrorMessage = "Please select a facility.")]
+    [DisplayName("Facility")]
+    public int FacilityId { get; set; }
+
+    [Required(ErrorMessage = "{0} is required.")]
+    [DataType(DataType.Date)]
+    public DateOnly Date { get; set; }
+
+    [Required(ErrorMessage = "{0} is required.")]
+    [DataType(DataType.Time)]
+    [DisplayName("Start Time")]
+    public TimeOnly StartTime { get; set; }
+
+    [DisplayName("Peak")]
+    public bool IsPeak { get; set; }
+}
+
+// One row of the time slot table on the Catalog Detail page
+public class SlotRowVM
+{
+    public int Id { get; set; }
+    public TimeOnly StartTime { get; set; }
+    public TimeOnly EndTime { get; set; }
+    public bool IsPeak { get; set; }
+    public decimal Price { get; set; }
+    public int SpotsLeft { get; set; }
+    public bool IsClosed { get; set; }
+}
+
 // Booking
 
 public class BookingVM

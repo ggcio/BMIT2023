@@ -1,0 +1,39 @@
+@model TimeSlotVM
+
+@{
+    ViewBag.Title = "Time Slot | Update";
+}
+
+<form method="post" class="form">
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <input type="hidden" asp-for="Id">
+
+    <label asp-for="Id"></label>
+    <b>@Model?.Id</b>
+    <br>
+
+    <label asp-for="FacilityId"></label>
+    <select asp-for="FacilityId" asp-items="ViewBag.FacilityList" autofocus>
+        <option value="">-- Select One --</option>
+    </select>
+    <span asp-validation-for="FacilityId"></span>
+
+    <label asp-for="Date"></label>
+    <input asp-for="Date" min="@DateTime.Today.ToString("yyyy-MM-dd")">
+    <span asp-validation-for="Date"></span>
+
+    @* data-rule-step="false": jQuery Validate does not support step on time inputs *@
+    <label asp-for="StartTime"></label>
+    <input asp-for="StartTime" min="08:00" max="19:00" step="3600" data-rule-step="false">
+    <span asp-validation-for="StartTime"></span>
+
+    <label asp-for="IsPeak"></label>
+    <input asp-for="IsPeak">
+    <span asp-validation-for="IsPeak"></span>
+
+    <section>
+        <button>Submit</button>
+        <button type="reset">Reset</button>
+    </section>
+</form>

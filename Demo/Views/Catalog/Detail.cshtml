@@ -31,6 +31,58 @@
     </tr>
 </table>
 
+@{
+    var slots = (List<SlotRowVM>)ViewBag.Slots;
+}
+
+<form method="get" action="/Catalog/Detail/@Model.Id">
+    <input type="date" name="date" value="@ViewBag.Date"
+           min="@DateTime.Today.ToString("yyyy-MM-dd")"
+           max="@DateTime.Today.AddDays(6).ToString("yyyy-MM-dd")">
+    <button>Show</button>
+</form>
+
+<p>Approved students book free.</p>
+
+@if (slots.Count == 0)
+{
+    <p>No time slots for this date.</p>
+}
+else
+{
+    <table class="table">
+        <tr>
+            <th>Time</th>
+            <th>Peak</th>
+            <th>Price</th>
+            <th>Availability</th>
+        </tr>
+
+        @foreach (var s in slots)
+        {
+            <tr>
+                <td>@s.StartTime.ToString("HH:mm") - @s.EndTime.ToString("HH:mm")</td>
+                <td>@(s.IsPeak ? "Yes" : "No")</td>
+                <td>RM @s.Price.ToString("0.00")</td>
+                <td>
+                    @if (s.IsClosed)
+                    {
+                        <text>Closed</text>
+                    }
+                    else if (s.SpotsLeft <= 0)
+                    {
+                        <text>Full</text>
+                    }
+                    else
+                    {
+                        <text>@s.SpotsLeft left</text>
+                    }
+                </td>
+            </tr>
+        }
+    </table>
+}
+
 <p>
     <a href="/Catalog">Back to list</a>
 </p>

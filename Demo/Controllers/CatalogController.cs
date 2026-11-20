@@ -28,7 +28,7 @@ public class CatalogController(DB db) : Controller
 
     // GET: Catalog/Detail
     [AllowAnonymous]
-    public IActionResult Detail(int? id)
+    public IActionResult Detail(int? id, DateOnly? date)
     {
         var m = db.Facilities
                   .Include(f => f.Category)
@@ -38,6 +38,36 @@ public class CatalogController(DB db) : Controller
         {
             return RedirectToAction("Index");
         }
+
+        // Only today to today+6 can be shown
+        var today = DateTime.Today.ToDateOnly();
+        if (date == null || date < today || date > today.AddDays(6))
+        {
+            date = today;
+        }
+
+        var now = DateTime.Now;
+        var nowTime = now.ToTimeOnly();
+        var isToday = date == today;
+
+        // Active bookings = Confirmed + Pending still within the 15-minute hold
+        ViewBag.Slots = db.TimeSlots
+                          .Where(s => s.FacilityId == m.Id && s.Date == date)
+                          .OrderBy(s => s.StartTime)
+                          .Select(s => new SlotRowVM
+                          {
+                              Id = s.Id,
+                              StartTime = s.StartTime,
+                              EndTime = s.EndTime,
+                              IsPeak = s.IsPeak,
+                              Price = m.HourlyRate + (s.IsPeak ? m.PeakSurcharge : 0),
+                              SpotsLeft = m.Capacity - s.Bookings.Count(b => b.Status == "Confirmed" ||
+                                                                             (b.Status == "Pending" && b.HoldExpiresAt > now)),
+                              IsClosed = isToday && s.StartTime <= nowTime,
+                          })
+                          .ToList();
+
+        ViewBag.Date = date.Value.ToString("yyyy-MM-dd");
 
         return View(m);
     }
