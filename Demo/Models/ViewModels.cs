@@ -170,6 +170,27 @@ public class TimeSlotVM
     public bool IsPeak { get; set; }
 }
 
+public class BatchSlotVM
+{
+    [Required(ErrorMessage = "{0} is required.")]
+    [DataType(DataType.Date)]
+    [DisplayName("Start Date")]
+    public DateOnly StartDate { get; set; }
+
+    [Required(ErrorMessage = "{0} is required.")]
+    [DataType(DataType.Date)]
+    [DisplayName("End Date")]
+    public DateOnly EndDate { get; set; }
+
+    [DataType(DataType.Time)]
+    [DisplayName("Peak From")]
+    public TimeOnly? PeakFrom { get; set; }
+
+    [DataType(DataType.Time)]
+    [DisplayName("Peak To")]
+    public TimeOnly? PeakTo { get; set; }
+}
+
 // One row of the time slot table on the Catalog Detail page
 public class SlotRowVM
 {
