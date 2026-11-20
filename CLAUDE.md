@@ -91,7 +91,7 @@ Run from the solution folder (where the `.sln` is).
 
 Migrations are run by the student in the Package Manager Console, not by Claude Code. Do not run a build while the app is being debugged in Visual Studio, because it locks the output files.
 
-Database: `*.mdf` and `*.ldf` are git-ignored. To reset, run `Data/ResetDatabase.sql` (edit the file paths to your machine) or re-attach an empty `DB.mdf`, then `Update-Database`, then run `Data/SampleData.sql` (twice, so Ids start from 1). `SampleData.sql` generates slots only for today and the next 6 days, so run it again when they expire. Sample logins use password `123456`.
+Database: `*.mdf` and `*.ldf` are git-ignored. To reset, delete the database in SQL Server Object Explorer (or ask Claude Code to remove the LocalDB entry and re-attach an empty `DB.mdf`), run `Update-Database` in the Package Manager Console, then run `Data/SampleData.sql` twice so Ids start from 1. `SampleData.sql` generates slots only for today and the next 6 days, so run it again when they expire. Sample logins use password `123456`.
 
 ## Git
 
