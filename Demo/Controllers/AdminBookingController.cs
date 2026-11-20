@@ -64,6 +64,58 @@ public class AdminBookingController(DB db) : Controller
         return View(m);
     }
 
+    // GET: AdminBooking/CheckIn
+    public IActionResult CheckIn()
+    {
+        return View();
+    }
+
+    // POST: AdminBooking/CheckIn
+    [HttpPost]
+    public IActionResult CheckIn(CheckInVM vm)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(vm);
+        }
+
+        var b = db.Bookings
+                  .Include(b => b.Member)
+                  .Include(b => b.TimeSlot)
+                  .ThenInclude(s => s.Facility)
+                  .FirstOrDefault(b => b.Id == vm.BookingId);
+
+        if (b == null)
+        {
+            ViewBag.Result = "Booking not found.";
+        }
+        else if (b.Status != "Confirmed")
+        {
+            ViewBag.Result = $"Not valid: this booking is {b.Status}.";
+        }
+        else if (b.CheckedInAt != null)
+        {
+            ViewBag.Result = $"Already used: checked in at {b.CheckedInAt:dd MMM yyyy HH:mm}.";
+        }
+        else if (b.TimeSlot.Date != DateTime.Today.ToDateOnly())
+        {
+            ViewBag.Result = $"Wrong date: this booking is for {b.TimeSlot.Date:dd MMM yyyy}.";
+        }
+        else
+        {
+            b.CheckedInAt = DateTime.Now;
+            db.SaveChanges();
+
+            ViewBag.Result = "Valid: checked in.";
+        }
+
+        ViewBag.Booking = b;
+
+        // Clear the input so the next ID can be entered
+        ModelState.Clear();
+        return View(new CheckInVM());
+    }
+
     // POST: AdminBooking/Cancel/{id}
     [HttpPost]
     public IActionResult Cancel(int id)
