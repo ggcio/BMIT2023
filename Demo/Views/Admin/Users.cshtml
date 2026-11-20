@@ -6,6 +6,10 @@
 
 <h2>Manage Users</h2>
 
+<p>
+    <a href="/Admin/Insert">Add User</a>
+</p>
+
 <table>
     <thead>
         <tr>
@@ -39,6 +43,22 @@
                         <form asp-action="Unblock" method="post">
                             <input type="hidden" name="email" value="@user.Email">
                             <button type="submit">Unblock and reset</button>
+                        </form>
+                    }
+                    @if (user.Role != UserRole.admin)
+                    {
+                        <a href="/Admin/Update?email=@user.Email">Edit</a>
+
+                        if (!user.IsBlocked)
+                        {
+                            <form asp-action="Block" method="post">
+                                <input type="hidden" name="email" value="@user.Email">
+                                <button type="submit" onclick="return confirm('Block @user.Email?')">Block</button>
+                            </form>
+                        }
+                        <form asp-action="Delete" method="post">
+                            <input type="hidden" name="email" value="@user.Email">
+                            <button type="submit" onclick="return confirm('Delete @user.Email? This cannot be undone.')">Delete</button>
                         </form>
                     }
                 </td>

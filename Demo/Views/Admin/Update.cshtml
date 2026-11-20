@@ -1,0 +1,26 @@
+@model AdminUserUpdateVM
+
+@{
+    ViewBag.Title = "Admin | Edit User";
+}
+
+<form class="form" method="post">
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <label asp-for="Email"></label>
+    <div>@Model.Email</div>
+    <input type="hidden" asp-for="Email">
+
+    <label asp-for="Name"></label>
+    <input asp-for="Name" data-trim autofocus>
+    <span asp-validation-for="Name"></span>
+
+    <section>
+        <button>Submit</button>
+        <button type="reset">Reset</button>
+    </section>
+</form>
+
+<p>
+    <a href="/Admin/Users">Back to list</a>
+</p>
