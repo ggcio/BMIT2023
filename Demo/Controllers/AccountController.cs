@@ -45,18 +45,11 @@ public class AccountController(DB db,
     {
         user.FailedAttempts++;
 
-        if (user.FailedAttempts >= 10)
-        {
-            user.IsBlocked = true;
-            user.LockedUntil = null;
-        }
-        else if (user.FailedAttempts >= 8)
+        // Lock for 1 minute on the 3rd failure, then start counting again
+        if (user.FailedAttempts >= 3)
         {
             user.LockedUntil = DateTime.UtcNow.AddMinutes(1);
-        }
-        else if (user.FailedAttempts >= 5)
-        {
-            user.LockedUntil = DateTime.UtcNow.AddSeconds(30);
+            user.FailedAttempts = 0;
         }
     }
 
@@ -87,7 +80,15 @@ public class AccountController(DB db,
                 db.SaveChanges();
             }
 
-            ModelState.AddModelError("", "Login credentials not matched.");
+            // The 3rd failure locks the account, so show the lockout message straight away
+            if (u != null && u.LockedUntil > DateTime.UtcNow)
+            {
+                AddLockoutError(u, ModelState);
+            }
+            else
+            {
+                ModelState.AddModelError("", "Login credentials not matched.");
+            }
         }
         else if (!u.EmailVerified)
         {
@@ -189,9 +190,16 @@ public class AccountController(DB db,
             db.Users.Add(user);
             db.SaveChanges();
 
-            SendVerificationEmail(user, token);
+            try
+            {
+                SendVerificationEmail(user, token);
+                TempData["Info"] = "Registration successful. Check your email to verify your account.";
+            }
+            catch
+            {
+                TempData["Info"] = "Registration successful, but the verification email could not be sent. Use Resend Verification.";
+            }
 
-            TempData["Info"] = "Registration successful. Check your email to verify your account.";
             return RedirectToAction("Login");
         }
 
@@ -248,7 +256,16 @@ public class AccountController(DB db,
             user.VerifyToken = token;
             user.VerifyExpiresAt = DateTime.UtcNow.AddHours(24);
             db.SaveChanges();
-            SendVerificationEmail(user, token);
+
+            try
+            {
+                SendVerificationEmail(user, token);
+            }
+            catch
+            {
+                TempData["Info"] = "The verification email could not be sent. Please try again later.";
+                return RedirectToAction(nameof(Login));
+            }
         }
 
         TempData["Info"] = "If the account requires verification, a new verification email has been sent.";
@@ -364,7 +381,16 @@ public class AccountController(DB db,
                 user.ResetToken = token;
                 user.ResetExpiresAt = DateTime.UtcNow.AddHours(1);
                 db.SaveChanges();
-                SendPasswordResetEmail(user, token);
+
+                try
+                {
+                    SendPasswordResetEmail(user, token);
+                }
+                catch
+                {
+                    TempData["Info"] = "The reset email could not be sent. Please try again later.";
+                    return RedirectToAction(nameof(Login));
+                }
             }
 
             TempData["Info"] = "If the account exists, a password reset email has been sent.";
