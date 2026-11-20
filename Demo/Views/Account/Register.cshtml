@@ -1,4 +1,5 @@
 ﻿@model RegisterVM
+@inject IConfiguration Config
 
 @{
     ViewBag.Title = "Account | Register";
@@ -31,6 +32,8 @@
     </label>
     <span asp-validation-for="Photo"></span>
 
+    <div class="g-recaptcha" data-sitekey="@Config["Recaptcha:SiteKey"]"></div>
+
     <section>
         <button>Register</button>
         <button type="reset">Reset</button>
@@ -43,6 +46,7 @@
 </p>
 
 @section foot {
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <script>
         $.validator.setDefaults({ ignore: '' });
     </script>

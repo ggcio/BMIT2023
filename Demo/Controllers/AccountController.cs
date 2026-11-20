@@ -3,13 +3,48 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System.Net.Mail;
 using System.Security.Cryptography;
+using System.Text.Json;
 
 namespace Demo.Controllers;
 
-public class AccountController(DB db, 
+public class AccountController(DB db,
                                Helper hp,
                                IConfiguration config) : Controller
 {
+    private static readonly HttpClient http = new() { Timeout = TimeSpan.FromSeconds(10) };
+
+    // True if Google confirms the reCAPTCHA response sent with the form
+    private async Task<bool> IsCaptchaValid()
+    {
+        var response = Request.Form["g-recaptcha-response"].ToString();
+
+        if (string.IsNullOrWhiteSpace(response))
+        {
+            return false;
+        }
+
+        var data = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["secret"] = config["Recaptcha:SecretKey"] ?? "",
+            ["response"] = response,
+            ["remoteip"] = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "",
+        });
+
+        try
+        {
+            var result = await http.PostAsync("https://www.google.com/recaptcha/api/siteverify", data);
+            var json = await result.Content.ReadAsStringAsync();
+
+            using var doc = JsonDocument.Parse(json);
+            return doc.RootElement.GetProperty("success").GetBoolean();
+        }
+        catch
+        {
+            // Network error, timeout or an unexpected reply: treat as not verified
+            return false;
+        }
+    }
+
     private string StudentEmailDomain =>
         config["UniversityEmailDomain"]?.Trim().TrimStart('@') ?? "student.tarc.edu.my";
 
@@ -61,12 +96,18 @@ public class AccountController(DB db,
 
     // POST: Account/Login
     [HttpPost]
-    public IActionResult Login(LoginVM vm, string? returnURL)
+    public async Task<IActionResult> Login(LoginVM vm, string? returnURL)
     {
+        var captchaValid = await IsCaptchaValid();
         var email = vm.Email.Trim();
         var u = db.Users.Find(email);
 
-        if (u != null && (u.IsBlocked || u.LockedUntil > DateTime.UtcNow))
+        // Captcha first, so a missing captcha is not counted as a failed login
+        if (!captchaValid)
+        {
+            ModelState.AddModelError("", "Please confirm you are not a robot.");
+        }
+        else if (u != null && (u.IsBlocked || u.LockedUntil > DateTime.UtcNow))
         {
             AddLockoutError(u, ModelState);
         }
@@ -156,8 +197,13 @@ public class AccountController(DB db,
 
     // POST: Account/Register
     [HttpPost]
-    public IActionResult Register(RegisterVM vm)
+    public async Task<IActionResult> Register(RegisterVM vm)
     {
+        if (!await IsCaptchaValid())
+        {
+            ModelState.AddModelError("", "Please confirm you are not a robot.");
+        }
+
         var email = vm.Email.Trim();
 
         if (ModelState.IsValid("Email") &&
