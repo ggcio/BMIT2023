@@ -333,8 +333,14 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
         booking.Payment!.Status = "Paid";
         booking.Payment.PaidAt = DateTime.Now;
 
+        // Cancelled (hold expired or by an admin) before the payment arrived: never re-confirm
+        if (booking.Status == "Cancelled")
+        {
+            booking.RefundStatus = "RefundDue";
+            TempData["Info"] = "This booking was cancelled, so your payment will be refunded.";
+        }
         // Paid after the hold expired and someone else took the slot
-        if (booking.HoldExpiresAt <= DateTime.Now &&
+        else if (booking.HoldExpiresAt <= DateTime.Now &&
             ActiveCount(booking.TimeSlotId) >= booking.TimeSlot.Facility.Capacity)
         {
             booking.Status = "Cancelled";

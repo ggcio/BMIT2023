@@ -26,6 +26,12 @@
       "files": [
         "jquery.validate.unobtrusive.min.js"
       ]
+    },
+    {
+      "library": "Chart.js@4.6.1",
+      "files": [
+        "chart.umd.min.js"
+      ]
     }
   ]
 }

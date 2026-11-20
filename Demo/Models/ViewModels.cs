@@ -157,3 +157,11 @@ public class BookingVM
     [DisplayName("Time Slot")]
     public int SlotId { get; set; }
 }
+
+public class CheckInVM
+{
+    [Required(ErrorMessage = "Please enter a booking ID.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Invalid booking ID.")]
+    [DisplayName("Booking ID")]
+    public int? BookingId { get; set; }
+}

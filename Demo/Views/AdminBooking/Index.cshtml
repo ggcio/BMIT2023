@@ -1,0 +1,27 @@
+@{
+    ViewBag.Title = "Booking | Index";
+}
+
+<p>
+    <a href="/AdminBooking/CheckIn">Check In</a> |
+    <a href="/AdminBooking/Charts">Charts</a>
+</p>
+
+<form data-ajax="true"
+      data-ajax-update="#target"
+      data-ajax-loading="#loader"
+      id="f">
+    @Html.DropDownList("status",
+                       new SelectList(new[] { "All", "Pending", "Confirmed", "Cancelled" }, ViewBag.Status))
+    <img src="/images/loader.gif" id="loader" style="display: none">
+</form>
+
+<div id="target">
+    <partial name="_Index">
+</div>
+
+@section foot {
+    <script>
+        $('#status').on('change', e => $(e.target.form).submit());
+    </script>
+}
