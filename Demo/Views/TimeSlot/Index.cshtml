@@ -1,0 +1,47 @@
+@model IEnumerable<TimeSlot>
+
+@{
+    ViewBag.Title = "Time Slot | Index";
+}
+
+<p>
+    <a href="/TimeSlot/Insert">Insert</a>
+</p>
+
+<form method="get">
+    <select name="facilityId" asp-items="ViewBag.FacilityList">
+        <option value="">-- All Facilities --</option>
+    </select>
+    <input type="date" name="date" value="@ViewBag.Date">
+    <button>Filter</button>
+</form>
+
+<p>@Model.Count() record(s)</p>
+
+<table class="table">
+    <tr>
+        <th>Id</th>
+        <th>Facility</th>
+        <th>Date</th>
+        <th>Start-End</th>
+        <th>Peak</th>
+        <th>Total Bookings</th>
+        <th></th>
+    </tr>
+
+    @foreach (var s in Model)
+    {
+        <tr>
+            <td>@s.Id</td>
+            <td>@s.Facility.Name</td>
+            <td>@s.Date.ToString("dd MMM yyyy (ddd)")</td>
+            <td>@s.StartTime.ToString("HH:mm") - @s.EndTime.ToString("HH:mm")</td>
+            <td>@(s.IsPeak ? "Yes" : "No")</td>
+            <td>@s.Bookings.Count</td>
+            <td>
+                <button data-get="/TimeSlot/Update/@s.Id">Update</button>
+                <button data-post="/TimeSlot/Delete/@s.Id">Delete</button>
+            </td>
+        </tr>
+    }
+</table>

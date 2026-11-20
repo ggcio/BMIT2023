@@ -149,7 +149,7 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
     }
 
     // GET: Booking/Create?slotId=
-    [Authorize(Roles = "Member")]
+    [Authorize(Roles = "student,public")]
     public IActionResult Create(int slotId)
     {
         var own = GetOwnBooking(slotId);
@@ -179,7 +179,7 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
     }
 
     // POST: Booking/Create
-    [Authorize(Roles = "Member")]
+    [Authorize(Roles = "student,public")]
     [HttpPost]
     public IActionResult Create(BookingVM vm)
     {
@@ -226,7 +226,7 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
     }
 
     // GET: Booking/Pay/{id}
-    [Authorize(Roles = "Member")]
+    [Authorize(Roles = "student,public")]
     public IActionResult Pay(int id)
     {
         var booking = GetBooking(id);
@@ -295,7 +295,7 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
     }
 
     // GET: Booking/Success?session_id=
-    [Authorize(Roles = "Member")]
+    [Authorize(Roles = "student,public")]
     public IActionResult Success(string session_id)
     {
         Session session;
@@ -364,7 +364,7 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
     }
 
     // GET: Booking/Cancel/{id} (Stripe's return page when checkout is left)
-    [Authorize(Roles = "Member")]
+    [Authorize(Roles = "student,public")]
     public IActionResult Cancel(int id)
     {
         var booking = GetBooking(id);
@@ -380,7 +380,7 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
     }
 
     // GET: Booking/QrCode/{id}
-    [Authorize(Roles = "Member")]
+    [Authorize(Roles = "student,public")]
     public IActionResult QrCode(int id)
     {
         var booking = GetBooking(id);
@@ -394,7 +394,7 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
     }
 
     // GET: Booking/Confirmation/{id}
-    [Authorize(Roles = "Member")]
+    [Authorize(Roles = "student,public")]
     public IActionResult Confirmation(int id)
     {
         var booking = GetBooking(id);
