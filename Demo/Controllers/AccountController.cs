@@ -80,7 +80,15 @@ public class AccountController(DB db,
                 db.SaveChanges();
             }
 
-            ModelState.AddModelError("", "Login credentials not matched.");
+            // The 3rd failure locks the account, so show the lockout message straight away
+            if (u != null && u.LockedUntil > DateTime.UtcNow)
+            {
+                AddLockoutError(u, ModelState);
+            }
+            else
+            {
+                ModelState.AddModelError("", "Login credentials not matched.");
+            }
         }
         else if (!u.EmailVerified)
         {
