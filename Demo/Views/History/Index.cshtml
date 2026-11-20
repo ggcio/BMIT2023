@@ -2,6 +2,7 @@
 
 @{
     ViewBag.Title = "Booking | History";
+    List<int> cancelIds = ViewBag.CancelIds;
 }
 
 @if (!Model.Any())
@@ -46,6 +47,10 @@ else
                 <td>@(b.CheckedInAt?.ToString("dd MMM yyyy HH:mm") ?? "-")</td>
                 <td>
                     <a href="/Booking/Confirmation/@b.Id">Detail</a>
+                    @if (cancelIds.Contains(b.Id))
+                    {
+                        <button data-post="/History/Cancel/@b.Id">Cancel</button>
+                    }
                 </td>
             </tr>
         }
