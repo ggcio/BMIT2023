@@ -4,8 +4,106 @@ using Microsoft.AspNetCore.Mvc;
 namespace Demo.Controllers;
 
 [Authorize(Roles = "admin")]
-public class AdminController(DB db, Helper hp) : Controller
+public class AdminController(DB db, Helper hp, IConfiguration config) : Controller
 {
+    // Same rule as Register: a student email domain gives role student, any other email gives public
+    private bool IsStudentEmail(string email)
+    {
+        var domain = config["UniversityEmailDomain"]?.Trim().TrimStart('@') ?? "student.tarc.edu.my";
+        var atIndex = email.LastIndexOf('@');
+
+        return atIndex > 0 &&
+               email[(atIndex + 1)..].Equals(domain, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // GET: Admin/Insert
+    public IActionResult Insert()
+    {
+        return View();
+    }
+
+    // POST: Admin/Insert
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Insert(AdminUserInsertVM vm)
+    {
+        var email = vm.Email?.Trim() ?? "";
+
+        if (ModelState.IsValid("Email") && db.Users.Any(u => u.Email == email))
+        {
+            ModelState.AddModelError("Email", "Duplicated Email.");
+        }
+
+        if (ModelState.IsValid)
+        {
+            db.Users.Add(new()
+            {
+                Email = email,
+                Password = hp.HashPassword(vm.Password),
+                Name = vm.Name,
+                Role = IsStudentEmail(email) ? UserRole.student : UserRole.@public,
+                EmailVerified = true,
+            });
+            db.SaveChanges();
+
+            TempData["Info"] = "User created.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        return View(vm);
+    }
+
+    // GET: Admin/Update?email=
+    public IActionResult Update(string? email)
+    {
+        var user = db.Users.Find(email);
+
+        if (user == null)
+        {
+            TempData["Info"] = "User account not found.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        if (user.Role == UserRole.admin)
+        {
+            TempData["Info"] = "Admin accounts cannot be changed here.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        return View(new AdminUserUpdateVM { Email = user.Email, Name = user.Name });
+    }
+
+    // POST: Admin/Update
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Update(AdminUserUpdateVM vm)
+    {
+        var user = db.Users.Find(vm.Email);
+
+        if (user == null)
+        {
+            TempData["Info"] = "User account not found.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        if (user.Role == UserRole.admin)
+        {
+            TempData["Info"] = "Admin accounts cannot be changed here.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        if (ModelState.IsValid)
+        {
+            user.Name = vm.Name;
+            db.SaveChanges();
+
+            TempData["Info"] = "User updated.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        return View(vm);
+    }
+
     // GET: Admin/Users
     public IActionResult Users()
     {
@@ -85,7 +183,9 @@ public class AdminController(DB db, Helper hp) : Controller
         }
         else
         {
-            if (user.PhotoURL != null)
+            // Keep the file if another user still uses the same photo
+            if (user.PhotoURL != null &&
+                !db.Users.Any(u => u.PhotoURL == user.PhotoURL && u.Email != user.Email))
             {
                 hp.DeletePhoto(user.PhotoURL, "photos");
             }

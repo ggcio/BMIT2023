@@ -1,0 +1,35 @@
+@model AdminUserInsertVM
+
+@{
+    ViewBag.Title = "Admin | Add User";
+}
+
+<form class="form" method="post">
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <label asp-for="Email"></label>
+    <input asp-for="Email" data-trim autofocus>
+    <span asp-validation-for="Email"></span>
+
+    <label asp-for="Name"></label>
+    <input asp-for="Name" data-trim>
+    <span asp-validation-for="Name"></span>
+
+    <label asp-for="Password"></label>
+    <input asp-for="Password">
+    <span asp-validation-for="Password"></span>
+
+    <label asp-for="Confirm"></label>
+    <input asp-for="Confirm">
+    <span asp-validation-for="Confirm"></span>
+
+    <section>
+        <button>Submit</button>
+        <button type="reset">Reset</button>
+    </section>
+</form>
+
+<p>
+    A student email domain gives the Student role; any other email gives Public.
+    <a href="/Admin/Users">Back to list</a>
+</p>

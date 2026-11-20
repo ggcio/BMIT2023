@@ -6,6 +6,10 @@
 
 <h2>Manage Users</h2>
 
+<p>
+    <a href="/Admin/Insert">Add User</a>
+</p>
+
 <table>
     <thead>
         <tr>
@@ -43,6 +47,8 @@
                     }
                     @if (user.Role != UserRole.admin)
                     {
+                        <a href="/Admin/Update?email=@user.Email">Edit</a>
+
                         if (!user.IsBlocked)
                         {
                             <form asp-action="Block" method="post">
