@@ -30,8 +30,14 @@
 
         @if (User.IsInRole("student") || User.IsInRole("public"))
         {
-            var photoURL = db.Users.Find(User.Identity.Name)!.PhotoURL;
-            <img src="/photos/@photoURL">
+            var user = User.Identity?.Name is string email
+                ? db.Users.Find(email)
+                : null;
+            var photoURL = user?.PhotoURL;
+            if (!string.IsNullOrEmpty(photoURL))
+            {
+                <img src="/photos/@photoURL">
+            }
         }
     </header>
 

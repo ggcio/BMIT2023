@@ -40,15 +40,15 @@
 <table class="table detail">
     <tr>
         <th>Name</th>
-        <td>@Model.Member.Name</td>
+        <td>@Model.User.Name</td>
     </tr>
     <tr>
         <th>Email</th>
-        <td>@Model.Member.Email</td>
+        <td>@Model.User.Email</td>
     </tr>
     <tr>
         <th>Student Status</th>
-        <td>@Model.Member.StudentStatus</td>
+        <td>@(Model.User.Role == UserRole.student ? "Approved" : "-" )</td>
     </tr>
 </table>
 

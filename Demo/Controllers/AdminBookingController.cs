@@ -16,7 +16,7 @@ public class AdminBookingController(DB db) : Controller
         ViewBag.Status = status = statuses.Contains(status) ? status : "All";
 
         var filtered = db.Bookings
-                         .Include(b => b.Member)
+                         .Include(b => b.User)
                          .Include(b => b.TimeSlot)
                          .ThenInclude(s => s.Facility)
                          .Where(b => status == "All" || b.Status == status);
@@ -49,7 +49,7 @@ public class AdminBookingController(DB db) : Controller
     public IActionResult Detail(int id)
     {
         var m = db.Bookings
-                  .Include(b => b.Member)
+                  .Include(b => b.User)
                   .Include(b => b.TimeSlot)
                   .ThenInclude(s => s.Facility)
                   .Include(b => b.Payment)
@@ -80,7 +80,7 @@ public class AdminBookingController(DB db) : Controller
         }
 
         var b = db.Bookings
-                  .Include(b => b.Member)
+                  .Include(b => b.User)
                   .Include(b => b.TimeSlot)
                   .ThenInclude(s => s.Facility)
                   .FirstOrDefault(b => b.Id == vm.BookingId);
