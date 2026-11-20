@@ -1,0 +1,58 @@
+@model IEnumerable<Booking>
+
+@{
+    ViewBag.Title = "Booking | History";
+    List<int> cancelIds = ViewBag.CancelIds;
+}
+
+@if (!Model.Any())
+{
+    <p>
+        You have no bookings yet.
+        <a href="/Catalog">Browse facilities</a>
+    </p>
+}
+else
+{
+    <p>@Model.Count() record(s)</p>
+
+    <table class="table">
+        <tr>
+            <th>Id</th>
+            <th>Facility</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th>Refund Status</th>
+            <th>Checked In</th>
+            <th></th>
+        </tr>
+
+        @foreach (var b in Model)
+        {
+            // A pending booking whose 15-minute hold has passed
+            var status = b.Status == "Pending" && b.HoldExpiresAt <= DateTime.Now
+                         ? "Pending (expired)"
+                         : b.Status;
+
+            <tr>
+                <td>@b.Id</td>
+                <td>@b.TimeSlot.Facility.Name</td>
+                <td>@b.TimeSlot.Date.ToString("dd MMM yyyy")</td>
+                <td>@b.TimeSlot.StartTime.ToString("HH:mm") - @b.TimeSlot.EndTime.ToString("HH:mm")</td>
+                <td>@(b.Price == 0 ? "Free (Student)" : $"RM {b.Price:F2}")</td>
+                <td>@status</td>
+                <td>@(b.RefundStatus == "RefundDue" ? "Refund due" : b.RefundStatus)</td>
+                <td>@(b.CheckedInAt?.ToString("dd MMM yyyy HH:mm") ?? "-")</td>
+                <td>
+                    <a href="/Booking/Confirmation/@b.Id">Detail</a>
+                    @if (cancelIds.Contains(b.Id))
+                    {
+                        <button data-post="/History/Cancel/@b.Id">Cancel</button>
+                    }
+                </td>
+            </tr>
+        }
+    </table>
+}
