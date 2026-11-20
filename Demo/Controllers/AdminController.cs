@@ -78,7 +78,8 @@ public class AdminController(DB db, Helper hp, IConfiguration config) : Controll
     [ValidateAntiForgeryToken]
     public IActionResult Update(AdminUserUpdateVM vm)
     {
-        var user = db.Users.Find(vm.Email);
+        // The form posts back to /Admin/Update?email=..., so the hidden Email must match the page it came from
+        var user = vm.Email == Request.Query["email"].ToString() ? db.Users.Find(vm.Email) : null;
 
         if (user == null)
         {
