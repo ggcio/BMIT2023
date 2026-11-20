@@ -1,4 +1,5 @@
 ﻿@model LoginVM
+@inject IConfiguration Config
 
 @{
     ViewBag.Title = "Account | Login";
@@ -28,6 +29,8 @@
     </label>
     <br>
 
+    <div class="g-recaptcha" data-sitekey="@Config["Recaptcha:SiteKey"]"></div>
+
     <section>
         <button>Login</button>
         <button type="reset">Reset</button>
@@ -56,3 +59,7 @@
       <a href="/Account/ResetPassword">Reset Password</a> |
       <a href="/Account/ResendVerification">Verify Email</a> ]
 </p>
+
+@section foot {
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+}
