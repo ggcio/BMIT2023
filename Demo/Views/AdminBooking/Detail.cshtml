@@ -47,8 +47,8 @@
         <td>@Model.User.Email</td>
     </tr>
     <tr>
-        <th>Student Status</th>
-        <td>@(Model.User.Role == UserRole.student ? "Approved" : "-" )</td>
+        <th>Member Type</th>
+        <td>@(Model.User.Role == UserRole.student ? "Student" : "Public")</td>
     </tr>
 </table>
 
