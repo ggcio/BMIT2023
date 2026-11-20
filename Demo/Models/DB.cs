@@ -10,8 +10,6 @@ public class DB(DbContextOptions options) : DbContext(options)
 {
     // DB Sets
     public DbSet<User> Users { get; set; }
-    public DbSet<Admin> Admins { get; set; }
-    public DbSet<Member> Members { get; set; }
 
     public DbSet<Category> Categories { get; set; }
     public DbSet<Facility> Facilities { get; set; }
@@ -23,14 +21,29 @@ public class DB(DbContextOptions options) : DbContext(options)
 
 // Entity Classes -------------------------------------------------------------
 
+public enum UserRole
+{
+    student,
+    @public,
+    admin
+}
+
 public class User
 {
     [Key, MaxLength(100)]
     public string Email { get; set; }
     [MaxLength(100)]
-    public string Hash { get; set; }
+    public string Password { get; set; }
     [MaxLength(100)]
     public string Name { get; set; }
+
+    public UserRole Role { get; set; } = UserRole.@public;
+
+    [MaxLength(100)]
+    public string? PhotoURL { get; set; }
+
+    // Navigation Properties
+    public List<Booking> Bookings { get; set; } = [];
 
     // Login blocking after 3 failed attempts
     public int FailedAttempts { get; set; }
@@ -43,33 +56,10 @@ public class User
     public bool EmailVerified { get; set; }
     [MaxLength(100)]
     public string? VerifyToken { get; set; }
+    public DateTime? VerifyExpiresAt { get; set; }
     [MaxLength(100)]
     public string? ResetToken { get; set; }
     public DateTime? ResetExpiresAt { get; set; }
-
-    public string Role => GetType().Name;
-}
-
-public class Admin : User
-{
-    public bool IsSuperAdmin { get; set; }
-}
-
-public class Member : User
-{
-    [MaxLength(100)]
-    public string PhotoURL { get; set; }
-
-    // Student status: None, Pending, Approved, Rejected
-    [MaxLength(20)]
-    public string? StudentId { get; set; }
-    [MaxLength(10)]
-    public string StudentStatus { get; set; } = "None";
-    [MaxLength(200)]
-    public string? ReviewNote { get; set; }
-
-    // Navigation Properties
-    public List<Booking> Bookings { get; set; } = [];
 }
 
 // Category, Facility, FacilityPhoto, TimeSlot
@@ -175,11 +165,12 @@ public class Booking
     public DateTime? CheckedInAt { get; set; }
 
     // Foreign Keys (MemberEmail, TimeSlotId)
+    [ForeignKey(nameof(User))]
     public string MemberEmail { get; set; }
     public int TimeSlotId { get; set; }
 
     // Navigation Properties
-    public Member Member { get; set; }
+    public User User { get; set; }
     public TimeSlot TimeSlot { get; set; }
     public Payment? Payment { get; set; }
 }

@@ -22,15 +22,22 @@
         {
             <div>
                 @User.Identity.Name |
-                @(User.IsInRole("Admin")  ? "Admin"  : "")
-                @(User.IsInRole("Member") ? "Member" : "")
+                @(User.IsInRole("admin")  ? "Admin"  : "")
+                @(User.IsInRole("student") ? "Student" : "")
+                @(User.IsInRole("public") ? "Public" : "")
             </div>
         }
 
-        @if (User.IsInRole("Member"))
+        @if (User.IsInRole("student") || User.IsInRole("public"))
         {
-            var photoURL = db.Members.Find(User.Identity.Name)!.PhotoURL;
-            <img src="/photos/@photoURL">
+            var user = User.Identity?.Name is string email
+                ? db.Users.Find(email)
+                : null;
+            var photoURL = user?.PhotoURL;
+            if (!string.IsNullOrEmpty(photoURL))
+            {
+                <img src="/photos/@photoURL">
+            }
         }
     </header>
 
@@ -50,9 +57,13 @@
             <a href="/Account/Register">Register</a>
             <a href="/Account/ResetPassword">Reset Password</a>
         }
-        @if (User.IsInRole("Member"))
+        @if (User.IsInRole("student") || User.IsInRole("public"))
         {
             <a href="/Account/UpdateProfile">Update Profile</a>
+        }
+        @if (User.IsInRole("admin"))
+        {
+            <a href="/Admin/Users">Manage Users</a>
         }
     </nav>
 

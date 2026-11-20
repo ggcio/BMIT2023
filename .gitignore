@@ -362,5 +362,10 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
+<<<<<<< HEAD
+#Coding context
+/Demo/Coding_context
+=======
 # Course practical slides (local only)
 **/docs/practicals/
+>>>>>>> a2d85bd155384d0ff2cc1208624cf5e29fd986b3

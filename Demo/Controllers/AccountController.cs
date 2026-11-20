@@ -1,13 +1,65 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System.Net.Mail;
+using System.Security.Cryptography;
 
 namespace Demo.Controllers;
 
 public class AccountController(DB db, 
-                               IWebHostEnvironment en, 
-                               Helper hp) : Controller
+                               Helper hp,
+                               IConfiguration config) : Controller
 {
+    private string StudentEmailDomain =>
+        config["UniversityEmailDomain"]?.Trim().TrimStart('@') ?? "student.tarc.edu.my";
+
+    private bool IsStudentEmail(string email)
+    {
+        var atIndex = email.LastIndexOf('@');
+
+        return atIndex > 0 &&
+               email[(atIndex + 1)..].Equals(StudentEmailDomain, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void AddLockoutError(User user, ModelStateDictionary modelState)
+    {
+        if (user.IsBlocked)
+        {
+            modelState.AddModelError("", "This account is permanently blocked. Please contact an administrator.");
+            return;
+        }
+
+        if (user.LockedUntil.HasValue && user.LockedUntil.Value > DateTime.UtcNow)
+        {
+            var seconds = Math.Max(1, (int)Math.Ceiling((user.LockedUntil.Value - DateTime.UtcNow).TotalSeconds));
+            modelState.AddModelError("", $"Too many failed attempts. Try again in {seconds} seconds.");
+        }
+    }
+
+    private static string CreateVerificationToken()
+    {
+        return Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+    }
+
+    private static void ApplyFailedLogin(User user)
+    {
+        user.FailedAttempts++;
+
+        if (user.FailedAttempts >= 10)
+        {
+            user.IsBlocked = true;
+            user.LockedUntil = null;
+        }
+        else if (user.FailedAttempts >= 8)
+        {
+            user.LockedUntil = DateTime.UtcNow.AddMinutes(1);
+        }
+        else if (user.FailedAttempts >= 5)
+        {
+            user.LockedUntil = DateTime.UtcNow.AddSeconds(30);
+        }
+    }
+
     // GET: Account/Login
     public IActionResult Login()
     {
@@ -18,18 +70,39 @@ public class AccountController(DB db,
     [HttpPost]
     public IActionResult Login(LoginVM vm, string? returnURL)
     {
-        var u = db.Users.Find(vm.Email);
+        var email = vm.Email.Trim();
+        var u = db.Users.Find(email);
 
-        if (u == null || !hp.VerifyPassword(u.Hash, vm.Password))
+        if (u != null && (u.IsBlocked || u.LockedUntil > DateTime.UtcNow))
         {
+            AddLockoutError(u, ModelState);
+        }
+        else if (u == null ||
+                 !hp.VerifyPassword(u.Password, vm.Password) ||
+                 (u.Role == UserRole.student && !IsStudentEmail(u.Email)))
+        {
+            if (u != null)
+            {
+                ApplyFailedLogin(u);
+                db.SaveChanges();
+            }
+
             ModelState.AddModelError("", "Login credentials not matched.");
+        }
+        else if (!u.EmailVerified)
+        {
+            ModelState.AddModelError("", "Please verify your email before logging in.");
         }
 
         if (ModelState.IsValid)
         {
+            u!.FailedAttempts = 0;
+            u.LockedUntil = null;
+            db.SaveChanges();
+
             TempData["Info"] = "Login successfully.";
 
-            hp.SignIn(u!.Email, u.Role, vm.RememberMe);
+            hp.SignIn(u!.Email, u.Role.ToString(), vm.RememberMe);
             
             if (string.IsNullOrEmpty(returnURL))
             {
@@ -37,6 +110,11 @@ public class AccountController(DB db,
             }
         }
         
+        if (u?.LockedUntil is DateTime lockedUntil && lockedUntil > DateTime.UtcNow)
+        {
+            ViewBag.LockoutSeconds = Math.Max(1, (int)Math.Ceiling((lockedUntil - DateTime.UtcNow).TotalSeconds));
+        }
+
         return View(vm);
     }
 
@@ -65,6 +143,7 @@ public class AccountController(DB db,
     // GET: Account/CheckEmail
     public bool CheckEmail(string email)
     {
+        email = email.Trim();
         return !db.Users.Any(u => u.Email == email);
     }
 
@@ -78,8 +157,10 @@ public class AccountController(DB db,
     [HttpPost]
     public IActionResult Register(RegisterVM vm)
     {
+        var email = vm.Email.Trim();
+
         if (ModelState.IsValid("Email") &&
-            db.Users.Any(u => u.Email == vm.Email))
+            db.Users.Any(u => u.Email == email))
         {
             ModelState.AddModelError("Email", "Duplicated Email.");
         }
@@ -92,20 +173,86 @@ public class AccountController(DB db,
         
         if (ModelState.IsValid)
         {
-            db.Members.Add(new()
+            var token = CreateVerificationToken();
+            var user = new User
             {
-                Email = vm.Email,
-                Hash = hp.HashPassword(vm.Password),
+                Email = email,
+                Password = hp.HashPassword(vm.Password),
                 Name = vm.Name,
-                PhotoURL = hp.SavePhoto(vm.Photo, "photos"),
-            });
+                PhotoURL = vm.Photo == null ? null : hp.SavePhoto(vm.Photo, "photos"),
+                Role = IsStudentEmail(email) ? UserRole.student : UserRole.@public,
+                EmailVerified = false,
+                VerifyToken = token,
+                VerifyExpiresAt = DateTime.UtcNow.AddHours(24),
+            };
+
+            db.Users.Add(user);
             db.SaveChanges();
 
-            TempData["Info"] = "Register successfully. Please login.";
+            SendVerificationEmail(user, token);
+
+            TempData["Info"] = "Registration successful. Check your email to verify your account.";
             return RedirectToAction("Login");
         }
 
         return View(vm);
+    }
+
+    // GET: Account/VerifyEmail
+    public IActionResult VerifyEmail(string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            ViewBag.Message = "The verification link is invalid.";
+            return View();
+        }
+
+        var user = db.Users.SingleOrDefault(u => u.VerifyToken == token);
+
+        if (user == null || user.VerifyExpiresAt is not DateTime expiresAt || expiresAt <= DateTime.UtcNow)
+        {
+            ViewBag.Message = "The verification link is invalid or has expired.";
+            return View();
+        }
+
+        user.EmailVerified = true;
+        user.VerifyToken = null;
+        user.VerifyExpiresAt = null;
+        db.SaveChanges();
+
+        ViewBag.Message = "Your email has been verified. You can now log in.";
+        return View();
+    }
+
+    // GET: Account/ResendVerification
+    public IActionResult ResendVerification()
+    {
+        return View();
+    }
+
+    // POST: Account/ResendVerification
+    [HttpPost]
+    public IActionResult ResendVerification(ResendVerificationVM vm)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(vm);
+        }
+
+        var email = vm.Email.Trim();
+        var user = db.Users.Find(email);
+
+        if (user != null && !user.EmailVerified)
+        {
+            var token = CreateVerificationToken();
+            user.VerifyToken = token;
+            user.VerifyExpiresAt = DateTime.UtcNow.AddHours(24);
+            db.SaveChanges();
+            SendVerificationEmail(user, token);
+        }
+
+        TempData["Info"] = "If the account requires verification, a new verification email has been sent.";
+        return RedirectToAction(nameof(Login));
     }
 
     // GET: Account/UpdatePassword
@@ -123,14 +270,14 @@ public class AccountController(DB db,
         var u = db.Users.Find(User.Identity!.Name);
         if (u == null) return RedirectToAction("Index", "Home");
 
-        if (!hp.VerifyPassword(u.Hash, vm.Current))
+        if (!hp.VerifyPassword(u.Password, vm.Current))
         {
             ModelState.AddModelError("Current", "Current Password not matched.");
         }
 
         if (ModelState.IsValid)
         {
-            u.Hash = hp.HashPassword(vm.New);
+            u.Password = hp.HashPassword(vm.New);
             db.SaveChanges();
 
             TempData["Info"] = "Password updated.";
@@ -141,10 +288,10 @@ public class AccountController(DB db,
     }
 
     // GET: Account/UpdateProfile
-    [Authorize(Roles = "Member")]
+    [Authorize(Roles = "student,public")]
     public IActionResult UpdateProfile()
     {
-        var m = db.Members.Find(User.Identity!.Name);
+        var m = db.Users.Find(User.Identity!.Name);
         if (m == null) return RedirectToAction("Index", "Home");
 
         var vm = new UpdateProfileVM
@@ -158,11 +305,11 @@ public class AccountController(DB db,
     }
 
     // POST: Account/UpdateProfile
-    [Authorize(Roles = "Member")]
+    [Authorize(Roles = "student,public")]
     [HttpPost]
     public IActionResult UpdateProfile(UpdateProfileVM vm)
     {
-        var m = db.Members.Find(User.Identity!.Name);
+        var m = db.Users.Find(User.Identity!.Name);
         if (m == null) return RedirectToAction("Index", "Home");
 
         if (vm.Photo != null)
@@ -177,7 +324,11 @@ public class AccountController(DB db,
 
             if (vm.Photo != null)
             {
-                hp.DeletePhoto(m.PhotoURL, "photos");
+                if (m.PhotoURL != null)
+                {
+                    hp.DeletePhoto(m.PhotoURL, "photos");
+                }
+
                 m.PhotoURL = hp.SavePhoto(vm.Photo, "photos");
             }
 
@@ -202,61 +353,109 @@ public class AccountController(DB db,
     [HttpPost]
     public IActionResult ResetPassword(ResetPasswordVM vm)
     {
-        var u = db.Users.Find(vm.Email);
-
-        if (u == null)
+        if (ModelState.IsValid)
         {
-            ModelState.AddModelError("Email", "Email not found.");
+            var email = vm.Email.Trim();
+            var user = db.Users.Find(email);
+
+            if (user != null)
+            {
+                var token = CreateVerificationToken();
+                user.ResetToken = token;
+                user.ResetExpiresAt = DateTime.UtcNow.AddHours(1);
+                db.SaveChanges();
+                SendPasswordResetEmail(user, token);
+            }
+
+            TempData["Info"] = "If the account exists, a password reset email has been sent.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        return View(vm);
+    }
+
+    // GET: Account/ResetPasswordWithToken
+    public IActionResult ResetPasswordWithToken(string? token)
+    {
+        var vm = new ResetPasswordTokenVM { Token = token ?? "" };
+        var user = FindValidResetUser(vm.Token);
+
+        if (user == null)
+        {
+            ViewBag.Message = "The password reset link is invalid or has expired.";
+        }
+
+        return View(vm);
+    }
+
+    // POST: Account/ResetPasswordWithToken
+    [HttpPost]
+    public IActionResult ResetPasswordWithToken(ResetPasswordTokenVM vm)
+    {
+        var user = FindValidResetUser(vm.Token);
+
+        if (user == null)
+        {
+            ModelState.AddModelError("", "The password reset link is invalid or has expired.");
         }
 
         if (ModelState.IsValid)
         {
-            string password = hp.RandomPassword();
-
-            u!.Hash = hp.HashPassword(password);
+            user!.Password = hp.HashPassword(vm.New);
+            user.ResetToken = null;
+            user.ResetExpiresAt = null;
             db.SaveChanges();
 
-            // Send reset password email
-            SendResetPasswordEmail(u, password);
-
-            TempData["Info"] = $"Password reset. Check your email.";
-            return RedirectToAction();
+            TempData["Info"] = "Password reset successfully. You can now log in.";
+            return RedirectToAction(nameof(Login));
         }
 
-        return View();
+        return View(vm);
     }
 
-    private void SendResetPasswordEmail(User u, string password)
+    private User? FindValidResetUser(string token)
     {
-        var mail = new MailMessage();
-        mail.To.Add(new MailAddress(u.Email, u.Name));
-        mail.Subject = "Reset Password";
+        if (string.IsNullOrWhiteSpace(token)) return null;
+
+        return db.Users.SingleOrDefault(u =>
+            u.ResetToken == token &&
+            u.ResetExpiresAt.HasValue &&
+            u.ResetExpiresAt.Value > DateTime.UtcNow);
+    }
+
+    private void SendPasswordResetEmail(User user, string token)
+    {
+        var url = Url.Action("ResetPasswordWithToken", "Account", new { token }, Request.Scheme);
+        var name = System.Net.WebUtility.HtmlEncode(user.Name);
+
+        using var mail = new MailMessage();
+        mail.To.Add(new MailAddress(user.Email, user.Name));
+        mail.Subject = "Reset your password";
         mail.IsBodyHtml = true;
-
-        var url = Url.Action("Login", "Account", null, "https");
-
-        var path = u switch
-        {
-            Admin    => Path.Combine(en.WebRootPath, "photos", "admin.jpg"),
-            Member m => Path.Combine(en.WebRootPath, "photos", m.PhotoURL),
-            _        => "",
-        };
-
-        var att = new Attachment(path);
-        mail.Attachments.Add(att);
-        att.ContentId = "photo";
-
         mail.Body = $@"
-            <img src='cid:photo' style='width: 200px; height: 200px;
-                                        border: 1px solid #333'>
-            <p>Dear {u.Name},<p>
-            <p>Your password has been reset to:</p>
-            <h1 style='color: red'>{password}</h1>
-            <p>
-                Please <a href='{url}'>login</a>
-                with your new password.
-            </p>
-            <p>From, 🐱 Super Admin</p>
+            <p>Dear {name},</p>
+            <p>Use the link below to choose a new password:</p>
+            <p><a href='{url}'>Reset password</a></p>
+            <p>This link expires in one hour and can only be used once.</p>
+        ";
+
+        hp.SendEmail(mail);
+    }
+
+    private void SendVerificationEmail(User user, string token)
+    {
+        var url = Url.Action("VerifyEmail", "Account", new { token }, Request.Scheme);
+        var name = System.Net.WebUtility.HtmlEncode(user.Name);
+
+        using var mail = new MailMessage();
+        mail.To.Add(new MailAddress(user.Email, user.Name));
+        mail.Subject = "Verify your email address";
+        mail.IsBodyHtml = true;
+        mail.Body = $@"
+            <p>Dear {name},</p>
+            <p>Please verify your email address by clicking the link below:</p>
+            <p><a href='{url}'>Verify email address</a></p>
+            <p>This link expires in 24 hours.</p>
         ";
 
         hp.SendEmail(mail);

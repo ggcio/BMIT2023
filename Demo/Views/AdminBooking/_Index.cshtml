@@ -1,0 +1,67 @@
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@model IPagedList<Booking>
+
+<p>
+    @Model.Count() of @Model.TotalItemCount record(s) |
+    Page @Model.PageNumber of @Model.PageCount
+</p>
+
+<table class="table">
+    <tr>
+        <th>Id</th>
+        <th>Member</th>
+        <th>Facility</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Price (RM)</th>
+        <th>Status</th>
+        <th>Refund Status</th>
+        <th>Checked In</th>
+        <th></th>
+    </tr>
+
+    @foreach (var b in Model)
+    {
+        // A pending booking whose 15-minute hold has passed
+        var status = b.Status == "Pending" && b.HoldExpiresAt <= DateTime.Now
+                     ? "Pending (expired)"
+                     : b.Status;
+
+        <tr>
+            <td>@b.Id</td>
+            <td>@b.User.Name</td>
+            <td>@b.TimeSlot.Facility.Name</td>
+            <td>@b.TimeSlot.Date.ToString("dd MMM yyyy")</td>
+            <td>@b.TimeSlot.StartTime.ToString("HH:mm") - @b.TimeSlot.EndTime.ToString("HH:mm")</td>
+            <td>@b.Price.ToString("0.00")</td>
+            <td>@status</td>
+            <td>@(b.RefundStatus == "RefundDue" ? "Refund due" : b.RefundStatus)</td>
+            <td>@(b.CheckedInAt?.ToString("dd MMM yyyy HH:mm") ?? "-")</td>
+            <td>
+                <button data-get="/AdminBooking/Detail/@b.Id">Detail</button>
+            </td>
+        </tr>
+    }
+</table>
+
+@{
+    var options = PagedListRenderOptions.ClassicPlusFirstAndLast;
+    options.LinkToFirstPageFormat    = "First";
+    options.LinkToLastPageFormat     = "Last";
+    options.LinkToPreviousPageFormat = "Previous";
+    options.LinkToNextPageFormat     = "Next";
+
+    var ajaxOptions = new AjaxOptions
+    {
+        HttpMethod       = "get",
+        UpdateTargetId   = "target",
+        LoadingElementId = "#loader",
+    };
+}
+
+@Html.PagedListPager(
+    Model,
+    p => $"?status={ViewBag.Status}&page={p}",
+    PagedListRenderOptions.EnableUnobtrusiveAjaxReplacing(options, ajaxOptions)
+)

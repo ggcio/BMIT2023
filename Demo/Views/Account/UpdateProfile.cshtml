@@ -19,7 +19,10 @@
     <label class="upload">
         <small>Select Photo...</small>
         <input asp-for="Photo" accept="image/jpeg,image/png" hidden>
-        <img src="/photos/@Model.PhotoURL">
+        @if (!string.IsNullOrEmpty(Model.PhotoURL))
+        {
+            <img src="/photos/@Model.PhotoURL">
+        }
     </label>
     <span asp-validation-for="Photo"></span>
 

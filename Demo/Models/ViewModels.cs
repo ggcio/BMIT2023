@@ -41,7 +41,7 @@ public class RegisterVM
     [StringLength(100)]
     public string Name { get; set; }
 
-    public IFormFile Photo { get; set; }
+    public IFormFile? Photo { get; set; }
 }
 
 public class UpdatePasswordVM
@@ -76,6 +76,29 @@ public class UpdateProfileVM
 }
 
 public class ResetPasswordVM
+{
+    [StringLength(100)]
+    [EmailAddress]
+    public string Email { get; set; }
+}
+
+public class ResetPasswordTokenVM
+{
+    public string Token { get; set; }
+
+    [StringLength(100, MinimumLength = 5)]
+    [DataType(DataType.Password)]
+    [DisplayName("New Password")]
+    public string New { get; set; }
+
+    [StringLength(100, MinimumLength = 5)]
+    [Compare("New")]
+    [DataType(DataType.Password)]
+    [DisplayName("Confirm Password")]
+    public string Confirm { get; set; }
+}
+
+public class ResendVerificationVM
 {
     [StringLength(100)]
     [EmailAddress]
@@ -166,4 +189,12 @@ public class BookingVM
     [Range(1, int.MaxValue)]
     [DisplayName("Time Slot")]
     public int SlotId { get; set; }
+}
+
+public class CheckInVM
+{
+    [Required(ErrorMessage = "Please enter a booking ID.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Invalid booking ID.")]
+    [DisplayName("Booking ID")]
+    public int? BookingId { get; set; }
 }

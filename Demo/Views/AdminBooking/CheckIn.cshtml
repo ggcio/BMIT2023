@@ -1,0 +1,54 @@
+@model CheckInVM
+
+@{
+    ViewBag.Title = "Booking | Check In";
+    Booking? b = ViewBag.Booking;
+}
+
+<form method="post" class="form">
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <label asp-for="BookingId"></label>
+    <input asp-for="BookingId" autofocus>
+    <span asp-validation-for="BookingId"></span>
+
+    <section>
+        <button>Check In</button>
+        <button type="reset">Reset</button>
+    </section>
+</form>
+
+@if (ViewBag.Result != null)
+{
+    <p><b>@ViewBag.Result</b></p>
+}
+
+@if (b != null)
+{
+    <table class="table detail">
+        <tr>
+            <th>Booking ID</th>
+            <td>@b.Id</td>
+        </tr>
+        <tr>
+            <th>Member</th>
+            <td>@b.User.Name</td>
+        </tr>
+        <tr>
+            <th>Facility</th>
+            <td>@b.TimeSlot.Facility.Name</td>
+        </tr>
+        <tr>
+            <th>Date</th>
+            <td>@b.TimeSlot.Date.ToString("dd MMM yyyy (ddd)")</td>
+        </tr>
+        <tr>
+            <th>Time</th>
+            <td>@b.TimeSlot.StartTime.ToString("HH:mm") - @b.TimeSlot.EndTime.ToString("HH:mm")</td>
+        </tr>
+    </table>
+}
+
+<p>
+    <a href="/AdminBooking">Back to list</a>
+</p>

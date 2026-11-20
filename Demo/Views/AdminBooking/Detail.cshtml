@@ -1,0 +1,122 @@
+@model Booking
+
+@{
+    ViewBag.Title = "Booking | Detail";
+
+    var status = Model.Status == "Pending" && Model.HoldExpiresAt <= DateTime.Now
+                 ? "Pending (expired)"
+                 : Model.Status;
+}
+
+<table class="table detail">
+    <tr>
+        <th>Booking ID</th>
+        <td>@Model.Id</td>
+    </tr>
+    <tr>
+        <th>Status</th>
+        <td>@status</td>
+    </tr>
+    <tr>
+        <th>Price</th>
+        <td>@(Model.Price == 0 ? "Free (Student)" : $"RM {Model.Price:F2}")</td>
+    </tr>
+    <tr>
+        <th>Hold Expires At</th>
+        <td>@(Model.HoldExpiresAt?.ToString("dd MMM yyyy HH:mm") ?? "-")</td>
+    </tr>
+    <tr>
+        <th>Refund Status</th>
+        <td>@(Model.RefundStatus == "RefundDue" ? "Refund due" : Model.RefundStatus)</td>
+    </tr>
+    <tr>
+        <th>Checked In At</th>
+        <td>@(Model.CheckedInAt?.ToString("dd MMM yyyy HH:mm") ?? "-")</td>
+    </tr>
+</table>
+
+<h2>Member</h2>
+
+<table class="table detail">
+    <tr>
+        <th>Name</th>
+        <td>@Model.User.Name</td>
+    </tr>
+    <tr>
+        <th>Email</th>
+        <td>@Model.User.Email</td>
+    </tr>
+    <tr>
+        <th>Student Status</th>
+        <td>@(Model.User.Role == UserRole.student ? "Approved" : "-" )</td>
+    </tr>
+</table>
+
+<h2>Time Slot</h2>
+
+<table class="table detail">
+    <tr>
+        <th>Facility</th>
+        <td>@Model.TimeSlot.Facility.Name</td>
+    </tr>
+    <tr>
+        <th>Location</th>
+        <td>@Model.TimeSlot.Facility.Location</td>
+    </tr>
+    <tr>
+        <th>Date</th>
+        <td>@Model.TimeSlot.Date.ToString("dd MMM yyyy (ddd)")</td>
+    </tr>
+    <tr>
+        <th>Time</th>
+        <td>@Model.TimeSlot.StartTime.ToString("HH:mm") - @Model.TimeSlot.EndTime.ToString("HH:mm")</td>
+    </tr>
+    <tr>
+        <th>Peak</th>
+        <td>@(Model.TimeSlot.IsPeak ? "Yes" : "No")</td>
+    </tr>
+</table>
+
+<h2>Payment</h2>
+
+@if (Model.Payment == null)
+{
+    <p>No payment.</p>
+}
+else
+{
+    <table class="table detail">
+        <tr>
+            <th>Amount</th>
+            <td>RM @Model.Payment.Amount.ToString("F2")</td>
+        </tr>
+        <tr>
+            <th>Stripe Reference</th>
+            <td>@Model.Payment.StripeReference</td>
+        </tr>
+        <tr>
+            <th>Status</th>
+            <td>@Model.Payment.Status</td>
+        </tr>
+        <tr>
+            <th>Paid At</th>
+            <td>@(Model.Payment.PaidAt?.ToString("dd MMM yyyy HH:mm") ?? "-")</td>
+        </tr>
+    </table>
+}
+
+<p>
+    @if ((Model.Status == "Pending" || Model.Status == "Confirmed") && Model.CheckedInAt == null)
+    {
+        <button data-post="/AdminBooking/Cancel/@Model.Id">Cancel Booking</button>
+    }
+    @if (Model.RefundStatus == "RefundDue")
+    {
+        <button data-post="/AdminBooking/Refunded/@Model.Id">Mark Refunded</button>
+    }
+</p>
+
+<p>
+    <a href="/AdminBooking">Back to list</a> |
+    <a href="/AdminBooking/CheckIn">Check In</a>
+</p>

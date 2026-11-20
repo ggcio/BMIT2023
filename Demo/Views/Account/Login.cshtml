@@ -7,6 +7,13 @@
 <form class="form" method="post">
     <div asp-validation-summary="ModelOnly"></div>
 
+    @if (ViewBag.LockoutSeconds is int lockoutSeconds)
+    {
+        <p id="lockout-countdown" data-seconds="@lockoutSeconds">
+            Try again in <strong>@lockoutSeconds</strong> seconds.
+        </p>
+    }
+
     <label asp-for="Email"></label>
     <input asp-for="Email" autofocus>
     <span asp-validation-for="Email"></span>
@@ -27,7 +34,25 @@
     </section>
 </form>
 
+@if (ViewBag.LockoutSeconds is int)
+{
+    <script>
+        const countdown = document.getElementById('lockout-countdown');
+        let seconds = Number(countdown.dataset.seconds);
+        const timer = setInterval(() => {
+            seconds--;
+            countdown.querySelector('strong').textContent = Math.max(0, seconds);
+
+            if (seconds <= 0) {
+                clearInterval(timer);
+                countdown.textContent = 'You can try logging in again now.';
+            }
+        }, 1000);
+    </script>
+}
+
 <p>
     [ <a href="/Account/Register">Register</a> |
-      <a href="/Account/ResetPassword">Reset Password</a> ]
+      <a href="/Account/ResetPassword">Reset Password</a> |
+      <a href="/Account/ResendVerification">Verify Email</a> ]
 </p>
