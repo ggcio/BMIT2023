@@ -5,7 +5,7 @@ using X.PagedList.Extensions;
 
 namespace Demo.Controllers;
 
-[Authorize(Roles = "Admin,SuperAdmin")]
+[Authorize(Roles = "admin")]
 public class AdminBookingController(DB db) : Controller
 {
     // GET: AdminBooking/Index?status=&page=

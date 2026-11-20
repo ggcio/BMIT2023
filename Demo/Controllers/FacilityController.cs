@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Demo.Controllers;
 
-[Authorize(Roles = "Admin,SuperAdmin")]
+[Authorize(Roles = "admin")]
 public class FacilityController(DB db) : Controller
 {
     // GET: Facility/Index

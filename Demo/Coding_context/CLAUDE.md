@@ -41,14 +41,16 @@ These rules override your defaults. Follow the prompt exactly and keep the code 
 
 ## Roles
 
-- `SuperAdmin`: one seeded account. Only this role creates, edits, blocks or deletes admin accounts. The seeded account cannot be edited or deleted in the UI.
-- `Admin`: manages members, facilities, time slots and bookings.
+Role names are lowercase: `admin`, `student`, `public`. Use `[Authorize(Roles = "admin")]` for admin pages and `[Authorize(Roles = "student,public")]` for member pages. SuperAdmin is postponed.
+
+- `admin`: manages users, facilities, time slots and bookings.
 - Visitor (not logged in): can browse the facility catalog and facility details, like a shopping site. Booking requires login.
-- `Member`: browses facilities, books, pays and views own booking history. Every member starts as a Public member and can apply for student status from their profile with a student ID. An admin approves or rejects once, and a rejected member can re-apply. Student status is a student ID field and a status field (None, Pending, Approved, Rejected) on Member, not a separate role, subclass or table, unless the prompt says otherwise. Approved students book for free and skip payment.
+- `student` and `public`: browse facilities, book, pay and view own booking history. The role is decided by email domain at registration (`UniversityEmailDomain` in `appsettings.json`): a student email becomes `student`, any other becomes `public`. There is no apply or approve step. Students book for free and skip payment.
 
 ## Business rules
 
-- Fixed one-hour time slots. Each facility has a capacity (courts 1, gym higher). A slot is full when its active bookings reach the capacity.
+- Fixed one-hour time slots. Each facility has a capacity (courts 1, gym higher). A slot is full when its active bookings reach the capacity. Active means Confirmed, or Pending with an unexpired hold. Count it this way everywhere.
+- Operating hours are fixed at 08:00 to 20:00, with no operating-hours field. Slots are one hour long (start 08:00 to 19:00), the end time is start plus one hour, and an admin ticks IsPeak per slot. Slots cannot be created in the past, and a slot with bookings cannot be edited or deleted.
 - Members can book up to 7 days ahead.
 - Price: each facility has an hourly rate, and peak slots add a surcharge. The booking stores the price that applied when it was made.
 - Public bookings stay pending until Stripe payment (test mode) succeeds. A pending booking holds its capacity for 15 minutes. Check this when loading availability. Do not add a background job.
@@ -57,7 +59,7 @@ These rules override your defaults. Follow the prompt exactly and keep the code 
 
 ## Entities
 
-User (parent) with Admin and Member children, Category, Facility, FacilityPhoto, TimeSlot, Booking, Payment. Fields are agreed by all three members in the first session. Do not add entities unless the prompt says so.
+User (a single class with a `UserRole` enum `Role` and a hashed `Password` field; no Admin or Member subclasses), Category, Facility, FacilityPhoto, TimeSlot, Booking, Payment. Fields are agreed by all three members in the first session. Do not add entities unless the prompt says so.
 
 ## Modules and owners
 
