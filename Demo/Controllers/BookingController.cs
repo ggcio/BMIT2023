@@ -121,18 +121,28 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
         mail.Attachments.Add(att);
 
         var price = b.Price == 0 ? "Free (Student)" : $"RM {b.Price:F2}";
-        var paid = b.Payment?.PaidAt == null ? "" : $"<p>Paid At: {b.Payment.PaidAt:dd MMM yyyy HH:mm}</p>";
+
+        // One table row: bold label on a grey background, HTML-encoded value
+        string Row(string label, string value) =>
+            $"<tr><td style='border: 1px solid #ccc; padding: 8px; background: #f2f2f2; font-weight: bold'>{label}</td>" +
+            $"<td style='border: 1px solid #ccc; padding: 8px'>{System.Net.WebUtility.HtmlEncode(value)}</td></tr>";
+
+        var rows = Row("Booking ID", b.Id.ToString()) +
+                   Row("Facility", slot.Facility.Name) +
+                   Row("Location", slot.Facility.Location) +
+                   Row("Date", slot.Date.ToString("dd MMM yyyy (ddd)")) +
+                   Row("Time", $"{slot.StartTime:HH:mm} - {slot.EndTime:HH:mm}") +
+                   Row("Price", price);
+
+        if (b.Payment?.PaidAt != null)
+        {
+            rows += Row("Paid At", b.Payment.PaidAt.Value.ToString("dd MMM yyyy HH:mm"));
+        }
 
         mail.Body = $@"
-            <p>Dear {user.Name},</p>
+            <p>Dear {System.Net.WebUtility.HtmlEncode(user.Name)},</p>
             <p>Your booking is confirmed.</p>
-            <p>Booking ID: {b.Id}</p>
-            <p>Facility: {slot.Facility.Name}</p>
-            <p>Location: {slot.Facility.Location}</p>
-            <p>Date: {slot.Date:dd MMM yyyy (ddd)}</p>
-            <p>Time: {slot.StartTime:HH:mm} - {slot.EndTime:HH:mm}</p>
-            <p>Price: {price}</p>
-            {paid}
+            <table style='border-collapse: collapse'>{rows}</table>
             <p>Show this QR code at check-in:</p>
             <img src='cid:qr' style='width: 200px; height: 200px'>
             <p>From, Campus Sports Facility Reservation System</p>
