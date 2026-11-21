@@ -16,7 +16,7 @@
     <div class="info">@Html.Raw(TempData["Info"])</div>
 
     <header>
-        <h1><a href="/">Simple Room Reservation</a></h1>
+        <h1><a href="/">Campus Sports Facility Reservation</a></h1>
 
         @if (User.Identity!.IsAuthenticated)
         {
@@ -42,7 +42,23 @@
     </header>
 
     <nav>
-        <a href="/">Index</a>
+        <a href="/">Home</a>
+        <a href="/Catalog">Facilities</a>
+
+        @if (User.IsInRole("student") || User.IsInRole("public"))
+        {
+            <a href="/History">My Bookings</a>
+        }
+        @if (User.IsInRole("admin"))
+        {
+            <a href="/Admin/Users">Manage Users</a>
+            <a href="/Category">Categories</a>
+            <a href="/Facility">Facility Admin</a>
+            <a href="/TimeSlot">Time Slots</a>
+            <a href="/AdminBooking">Bookings</a>
+            <a href="/AdminBooking/CheckIn">Check In</a>
+            <a href="/AdminBooking/Charts">Charts</a>
+        }
 
         <div></div>
 
@@ -60,10 +76,6 @@
         @if (User.IsInRole("student") || User.IsInRole("public"))
         {
             <a href="/Account/UpdateProfile">Update Profile</a>
-        }
-        @if (User.IsInRole("admin"))
-        {
-            <a href="/Admin/Users">Manage Users</a>
         }
     </nav>
 
