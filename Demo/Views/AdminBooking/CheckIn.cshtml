@@ -9,7 +9,8 @@
     <div asp-validation-summary="ModelOnly"></div>
 
     <label asp-for="BookingId"></label>
-    <input asp-for="BookingId" autofocus>
+    <input asp-for="BookingId" min="1" step="1"
+           data-msg-min="Invalid booking ID." data-msg-step="Invalid booking ID." autofocus>
     <span asp-validation-for="BookingId"></span>
 
     <section>
@@ -46,6 +47,75 @@
             <th>Time</th>
             <td>@b.TimeSlot.StartTime.ToString("HH:mm") - @b.TimeSlot.EndTime.ToString("HH:mm")</td>
         </tr>
+    </table>
+}
+
+@{
+    List<Booking> ready = ViewBag.Ready;
+    List<Booking> checkedIn = ViewBag.CheckedIn;
+}
+
+<h2>Ready for check-in</h2>
+
+@if (ready.Count == 0)
+{
+    <p>No bookings to check in today.</p>
+}
+else
+{
+    <table class="table">
+        <tr>
+            <th>Id</th>
+            <th>Member</th>
+            <th>Member Type</th>
+            <th>Facility</th>
+            <th>Time</th>
+            <th></th>
+        </tr>
+
+        @foreach (var r in ready)
+        {
+            <tr>
+                <td>@r.Id</td>
+                <td>@r.User.Name</td>
+                <td>@(r.User.Role == UserRole.student ? "Student" : "Public")</td>
+                <td>@r.TimeSlot.Facility.Name</td>
+                <td>@r.TimeSlot.StartTime.ToString("HH:mm") - @r.TimeSlot.EndTime.ToString("HH:mm")</td>
+                <td>
+                    <button data-post="/AdminBooking/CheckInById/@r.Id">Check In</button>
+                </td>
+            </tr>
+        }
+    </table>
+}
+
+<h2>Checked in today</h2>
+
+@if (checkedIn.Count == 0)
+{
+    <p>No one has checked in yet today.</p>
+}
+else
+{
+    <table class="table">
+        <tr>
+            <th>Id</th>
+            <th>Member</th>
+            <th>Facility</th>
+            <th>Time</th>
+            <th>Checked In At</th>
+        </tr>
+
+        @foreach (var c in checkedIn)
+        {
+            <tr>
+                <td>@c.Id</td>
+                <td>@c.User.Name</td>
+                <td>@c.TimeSlot.Facility.Name</td>
+                <td>@c.TimeSlot.StartTime.ToString("HH:mm") - @c.TimeSlot.EndTime.ToString("HH:mm")</td>
+                <td>@c.CheckedInAt?.ToString("HH:mm")</td>
+            </tr>
+        }
     </table>
 }
 
