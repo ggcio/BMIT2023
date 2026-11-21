@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using X.PagedList.Extensions;
 
 namespace Demo.Controllers;
 
@@ -9,9 +10,50 @@ namespace Demo.Controllers;
 public class FacilityController(DB db) : Controller
 {
     // GET: Facility/Index
-    public IActionResult Index()
+    public IActionResult Index(string? name, string? sort, string? dir, int page = 1)
     {
-        var m = db.Facilities.Include(f => f.Category);
+        // (1) Searching ------------------------
+        ViewBag.Name = name = name?.Trim() ?? "";
+
+        var searched = db.Facilities
+                         .Include(f => f.Category)
+                         .Where(f => f.Name.Contains(name));
+
+        // (2) Sorting --------------------------
+        string[] sorts = ["Id", "Name", "Category", "Location", "Capacity", "Rate"];
+        ViewBag.Sort = sort = sorts.Contains(sort) ? sort : "Name";
+        ViewBag.Dir = dir = dir == "des" ? "des" : "asc";
+
+        Func<Facility, object> fn = sort switch
+        {
+            "Id"       => f => f.Id,
+            "Category" => f => f.Category.Name,
+            "Location" => f => f.Location,
+            "Capacity" => f => f.Capacity,
+            "Rate"     => f => f.HourlyRate,
+            _          => f => f.Name,
+        };
+
+        var sorted = dir == "des" ? searched.OrderByDescending(fn) : searched.OrderBy(fn);
+
+        // (3) Paging ---------------------------
+        if (page < 1)
+        {
+            return RedirectToAction(null, new { name, sort, dir, page = 1 });
+        }
+
+        var m = sorted.ToPagedList(page, 10);
+
+        if (page > m.PageCount && m.PageCount > 0)
+        {
+            return RedirectToAction(null, new { name, sort, dir, page = m.PageCount });
+        }
+
+        if (Request.IsAjax())
+        {
+            return PartialView("_Index", m);
+        }
+
         return View(m);
     }
 

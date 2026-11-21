@@ -1,0 +1,143 @@
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@model IPagedList<Facility>
+
+@{
+    int? categoryId = ViewBag.CategoryId;
+    string name = ViewBag.Name;
+    string sort = ViewBag.Sort;
+    string dir = ViewBag.Dir;
+
+    // Search and sort values kept by the category links
+    string keep = $"name={Uri.EscapeDataString(name)}&sort={sort}&dir={dir}";
+
+    // Sort field and its link text
+    var fields = new Dictionary<string, string>
+    {
+        ["Name"]     = "Name",
+        ["Rate"]     = "Hourly Rate",
+        ["Capacity"] = "Capacity",
+    };
+}
+
+@* Hidden fields belong to the search form "f", so searching keeps the current category and sort *@
+<input type="hidden" name="categoryId" value="@categoryId" form="f">
+<input type="hidden" name="sort" value="@sort" form="f">
+<input type="hidden" name="dir" value="@dir" form="f">
+
+@* Category filter: the selected one is shown in bold without a link *@
+<p>
+    @if (categoryId == null)
+    {
+        <b>All</b>
+    }
+    else
+    {
+        <a href="/Catalog?@keep"
+           data-ajax="true"
+           data-ajax-update="#target"
+           data-ajax-loading="#loader">All</a>
+    }
+
+    @foreach (Category c in ViewBag.Categories)
+    {
+        <text> | </text>
+        if (c.Id == categoryId)
+        {
+            <b>@c.Name</b>
+        }
+        else
+        {
+            <a href="/Catalog?categoryId=@c.Id&@keep"
+               data-ajax="true"
+               data-ajax-update="#target"
+               data-ajax-loading="#loader">@c.Name</a>
+        }
+    }
+</p>
+
+<p>
+    Sort by:
+    @foreach (var (field, text) in fields)
+    {
+        // Default: ascending, no arrow
+        string d = "asc";
+        string arrow = "";
+
+        // Currently sorted field: show its arrow, click again to reverse
+        if (field == sort)
+        {
+            d = dir == "des" ? "asc" : "des";
+            arrow = dir == "des" ? " ▾" : " ▴";
+        }
+
+        <a href="/Catalog?categoryId=@categoryId&name=@Uri.EscapeDataString(name)&sort=@field&dir=@d"
+           data-ajax="true"
+           data-ajax-update="#target"
+           data-ajax-loading="#loader">@(text + arrow)</a>
+        <text> </text>
+    }
+</p>
+
+<p>
+    @Model.Count() of @Model.TotalItemCount record(s) |
+    Page @Model.PageNumber of @Model.PageCount
+</p>
+
+@if (!Model.Any())
+{
+    <p>No facilities found.</p>
+}
+
+@foreach (var f in Model)
+{
+    <table class="table detail">
+        <tr>
+            <th>Name</th>
+            <td>@f.Name</td>
+        </tr>
+        <tr>
+            <th>Category</th>
+            <td>@f.Category.Name</td>
+        </tr>
+        <tr>
+            <th>Location</th>
+            <td>@f.Location</td>
+        </tr>
+        <tr>
+            <th>Capacity</th>
+            <td>@f.Capacity</td>
+        </tr>
+        <tr>
+            <th>Hourly Rate</th>
+            <td>RM @f.HourlyRate.ToString("0.00")</td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <a href="/Catalog/Detail/@f.Id">Details</a>
+            </td>
+        </tr>
+    </table>
+    <br>
+}
+
+@{
+    var options = PagedListRenderOptions.ClassicPlusFirstAndLast;
+    options.LinkToFirstPageFormat    = "First";
+    options.LinkToLastPageFormat     = "Last";
+    options.LinkToPreviousPageFormat = "Previous";
+    options.LinkToNextPageFormat     = "Next";
+
+    var ajaxOptions = new AjaxOptions
+    {
+        HttpMethod       = "get",
+        UpdateTargetId   = "target",
+        LoadingElementId = "#loader",
+    };
+}
+
+@Html.PagedListPager(
+    Model,
+    p => $"/Catalog?categoryId={categoryId}&name={Uri.EscapeDataString(name)}&sort={sort}&dir={dir}&page={p}",
+    PagedListRenderOptions.EnableUnobtrusiveAjaxReplacing(options, ajaxOptions)
+)

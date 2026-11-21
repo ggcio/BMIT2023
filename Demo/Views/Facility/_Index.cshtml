@@ -1,0 +1,94 @@
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@model IPagedList<Facility>
+
+@{
+    string name = ViewBag.Name;
+    string sort = ViewBag.Sort;
+    string dir = ViewBag.Dir;
+
+    // Sort field and its table header text
+    var fields = new Dictionary<string, string>
+    {
+        ["Id"]       = "Id",
+        ["Name"]     = "Name",
+        ["Category"] = "Category",
+        ["Location"] = "Location",
+        ["Capacity"] = "Capacity",
+        ["Rate"]     = "Hourly Rate (RM)",
+    };
+}
+
+@* Hidden fields belong to the search form "f", so searching keeps the current sort *@
+<input type="hidden" name="sort" value="@sort" form="f">
+<input type="hidden" name="dir" value="@dir" form="f">
+
+<p>
+    @Model.Count() of @Model.TotalItemCount record(s) |
+    Page @Model.PageNumber of @Model.PageCount
+</p>
+
+<table class="table">
+    <tr>
+        @foreach (var (field, text) in fields)
+        {
+            // Default: ascending, no arrow
+            string d = "asc";
+            string c = "";
+
+            // Currently sorted field: show its arrow, click again to reverse
+            if (field == sort)
+            {
+                d = dir == "des" ? "asc" : "des";
+                c = dir;
+            }
+
+            <th>
+                <a href="?name=@Uri.EscapeDataString(name)&sort=@field&dir=@d" class="@c"
+                   data-ajax="true"
+                   data-ajax-update="#target"
+                   data-ajax-loading="#loader">@text</a>
+            </th>
+        }
+        <th>Peak Surcharge (RM)</th>
+        <th></th>
+    </tr>
+
+    @foreach (var f in Model)
+    {
+        <tr>
+            <td>@f.Id</td>
+            <td>@f.Name</td>
+            <td>@f.Category.Name</td>
+            <td>@f.Location</td>
+            <td>@f.Capacity</td>
+            <td>@f.HourlyRate.ToString("0.00")</td>
+            <td>@f.PeakSurcharge.ToString("0.00")</td>
+            <td>
+                <button data-get="/Facility/Update/@f.Id">Update</button>
+                <button data-post="/Facility/Delete/@f.Id">Delete</button>
+            </td>
+        </tr>
+    }
+</table>
+
+@{
+    var options = PagedListRenderOptions.ClassicPlusFirstAndLast;
+    options.LinkToFirstPageFormat    = "First";
+    options.LinkToLastPageFormat     = "Last";
+    options.LinkToPreviousPageFormat = "Previous";
+    options.LinkToNextPageFormat     = "Next";
+
+    var ajaxOptions = new AjaxOptions
+    {
+        HttpMethod       = "get",
+        UpdateTargetId   = "target",
+        LoadingElementId = "#loader",
+    };
+}
+
+@Html.PagedListPager(
+    Model,
+    p => $"?name={Uri.EscapeDataString(name)}&sort={sort}&dir={dir}&page={p}",
+    PagedListRenderOptions.EnableUnobtrusiveAjaxReplacing(options, ajaxOptions)
+)
