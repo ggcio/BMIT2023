@@ -9,7 +9,8 @@
     <div asp-validation-summary="ModelOnly"></div>
 
     <label asp-for="BookingId"></label>
-    <input asp-for="BookingId" autofocus>
+    <input asp-for="BookingId" min="1" step="1"
+           data-msg-min="Invalid booking ID." data-msg-step="Invalid booking ID." autofocus>
     <span asp-validation-for="BookingId"></span>
 
     <section>
