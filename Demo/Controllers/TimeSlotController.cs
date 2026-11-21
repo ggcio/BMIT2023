@@ -96,6 +96,127 @@ public class TimeSlotController(DB db) : Controller
         return View(vm);
     }
 
+    // GET: TimeSlot/Batch
+    public IActionResult Batch()
+    {
+        var vm = new BatchSlotVM
+        {
+            StartDate = DateTime.Today.ToDateOnly(),
+            EndDate = DateTime.Today.AddDays(6).ToDateOnly(),
+        };
+
+        return View(vm);
+    }
+
+    // POST: TimeSlot/Batch
+    [HttpPost]
+    public IActionResult Batch(BatchSlotVM vm)
+    {
+        var today = DateTime.Today.ToDateOnly();
+        var now = DateTime.Now.ToTimeOnly();
+
+        if (ModelState.IsValid("StartDate") && vm.StartDate < today)
+        {
+            ModelState.AddModelError("StartDate", "Start Date out of range.");
+        }
+
+        if (ModelState.IsValid("StartDate") && ModelState.IsValid("EndDate") && vm.EndDate < vm.StartDate)
+        {
+            ModelState.AddModelError("EndDate", "End Date must not be before Start Date.");
+        }
+
+        // Count both dates, so the same date twice is 1 day
+        if (ModelState.IsValid("StartDate") && ModelState.IsValid("EndDate") &&
+            vm.EndDate.DayNumber - vm.StartDate.DayNumber + 1 > 31)
+        {
+            ModelState.AddModelError("EndDate", "Date range must not exceed 31 days.");
+        }
+
+        if (ModelState.IsValid("PeakFrom") && ModelState.IsValid("PeakTo"))
+        {
+            if (vm.PeakFrom.HasValue != vm.PeakTo.HasValue)
+            {
+                ModelState.AddModelError("", "Enter both Peak From and Peak To, or leave both empty.");
+            }
+            else if (vm.PeakFrom.HasValue && vm.PeakTo.HasValue)
+            {
+                var from = vm.PeakFrom.Value;
+                var to = vm.PeakTo.Value;
+
+                if (from.Minute != 0 || from.Second != 0 || from.Hour < 8 || from.Hour > 19)
+                {
+                    ModelState.AddModelError("PeakFrom", "Peak From must be on the hour from 08:00 to 19:00.");
+                }
+
+                if (to.Minute != 0 || to.Second != 0 || to.Hour < 9 || to.Hour > 20)
+                {
+                    ModelState.AddModelError("PeakTo", "Peak To must be on the hour from 09:00 to 20:00.");
+                }
+
+                if (ModelState.IsValid("PeakFrom") && ModelState.IsValid("PeakTo") && to <= from)
+                {
+                    ModelState.AddModelError("PeakTo", "Peak To must be after Peak From.");
+                }
+            }
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(vm);
+        }
+
+        var facilityIds = db.Facilities.Select(f => f.Id).ToList();
+
+        // Load the existing slots in the range once, then check them in memory
+        var existing = db.TimeSlots
+                         .Where(s => s.Date >= vm.StartDate && s.Date <= vm.EndDate)
+                         .Select(s => new { s.FacilityId, s.Date, s.StartTime })
+                         .ToList();
+
+        int created = 0;
+        int skipped = 0;
+        int days = vm.EndDate.DayNumber - vm.StartDate.DayNumber + 1;
+
+        foreach (var facilityId in facilityIds)
+        {
+            // Count days instead of stepping past EndDate, so 9999-12-31 does not overflow
+            for (int d = 0; d < days; d++)
+            {
+                var date = vm.StartDate.AddDays(d);
+
+                for (int hour = 8; hour <= 19; hour++)
+                {
+                    var start = new TimeOnly(hour, 0);
+
+                    bool passed = date == today && start <= now;
+                    bool exists = existing.Any(s => s.FacilityId == facilityId && s.Date == date && s.StartTime == start);
+
+                    if (passed || exists)
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    db.TimeSlots.Add(new()
+                    {
+                        FacilityId = facilityId,
+                        Date = date,
+                        StartTime = start,
+                        EndTime = start.AddHours(1),
+                        IsPeak = vm.PeakFrom.HasValue && vm.PeakTo.HasValue &&
+                                 vm.PeakFrom.Value <= start && start < vm.PeakTo.Value,
+                    });
+                    created++;
+                }
+            }
+        }
+
+        db.SaveChanges();
+
+        TempData["Info"] = $"{created} created, {skipped} skipped.";
+        return RedirectToAction("Index", new { date = vm.StartDate.ToString("yyyy-MM-dd") });
+    }
+
     // GET: TimeSlot/Update
     public IActionResult Update(int? id)
     {

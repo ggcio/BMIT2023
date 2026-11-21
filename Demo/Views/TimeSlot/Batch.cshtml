@@ -1,0 +1,37 @@
+@model BatchSlotVM
+
+@{
+    ViewBag.Title = "Time Slot | Batch";
+}
+
+<p>Hours are 08:00 to 19:00 for all facilities.</p>
+
+<form method="post" action="/TimeSlot/Batch" class="form">
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <label asp-for="StartDate"></label>
+    <input asp-for="StartDate" min="@DateTime.Today.ToString("yyyy-MM-dd")" autofocus>
+    <span asp-validation-for="StartDate"></span>
+
+    <label asp-for="EndDate"></label>
+    <input asp-for="EndDate" min="@DateTime.Today.ToString("yyyy-MM-dd")">
+    <span asp-validation-for="EndDate"></span>
+
+    @* data-rule-step="false": jQuery Validate does not support step on time inputs *@
+    <label asp-for="PeakFrom"></label>
+    <input asp-for="PeakFrom" step="3600" data-rule-step="false">
+    <span asp-validation-for="PeakFrom"></span>
+
+    <label asp-for="PeakTo"></label>
+    <input asp-for="PeakTo" step="3600" data-rule-step="false">
+    <span asp-validation-for="PeakTo"></span>
+
+    <section>
+        <button>Generate</button>
+        <button type="reset">Reset</button>
+    </section>
+</form>
+
+<p>
+    <a href="/TimeSlot/Index">Back to list</a>
+</p>
