@@ -67,6 +67,7 @@ public class AdminBookingController(DB db) : Controller
     // GET: AdminBooking/CheckIn
     public IActionResult CheckIn()
     {
+        LoadTodayLists();
         return View();
     }
 
@@ -76,6 +77,7 @@ public class AdminBookingController(DB db) : Controller
     {
         if (!ModelState.IsValid)
         {
+            LoadTodayLists();
             return View(vm);
         }
 
@@ -85,35 +87,69 @@ public class AdminBookingController(DB db) : Controller
                   .ThenInclude(s => s.Facility)
                   .FirstOrDefault(b => b.Id == vm.BookingId);
 
-        if (b == null)
-        {
-            ViewBag.Result = "Booking not found.";
-        }
-        else if (b.Status != "Confirmed")
-        {
-            ViewBag.Result = $"Not valid: this booking is {b.Status}.";
-        }
-        else if (b.CheckedInAt != null)
-        {
-            ViewBag.Result = $"Already used: checked in at {b.CheckedInAt:dd MMM yyyy HH:mm}.";
-        }
-        else if (b.TimeSlot.Date != DateTime.Today.ToDateOnly())
-        {
-            ViewBag.Result = $"Wrong date: this booking is for {b.TimeSlot.Date:dd MMM yyyy}.";
-        }
-        else
-        {
-            b.CheckedInAt = DateTime.Now;
-            db.SaveChanges();
-
-            ViewBag.Result = "Valid: checked in.";
-        }
-
+        ViewBag.Result = DoCheckIn(b);
         ViewBag.Booking = b;
+
+        LoadTodayLists();
 
         // Clear the input so the next ID can be entered
         ModelState.Clear();
         return View(new CheckInVM());
+    }
+
+    // POST: AdminBooking/CheckInById/{id} (the Check In button in the Ready list)
+    [HttpPost]
+    public IActionResult CheckInById(int id)
+    {
+        var b = db.Bookings
+                  .Include(b => b.TimeSlot)
+                  .FirstOrDefault(b => b.Id == id);
+
+        TempData["Info"] = DoCheckIn(b);
+        return RedirectToAction("CheckIn");
+    }
+
+    // Check in the booking if allowed, and return the result message
+    private string DoCheckIn(Booking? b)
+    {
+        if (b == null)
+        {
+            return "Booking not found.";
+        }
+        else if (b.Status != "Confirmed")
+        {
+            return $"Not valid: this booking is {b.Status}.";
+        }
+        else if (b.CheckedInAt != null)
+        {
+            return $"Already used: checked in at {b.CheckedInAt:dd MMM yyyy HH:mm}.";
+        }
+        else if (b.TimeSlot.Date != DateTime.Today.ToDateOnly())
+        {
+            return $"Wrong date: this booking is for {b.TimeSlot.Date:dd MMM yyyy}.";
+        }
+
+        b.CheckedInAt = DateTime.Now;
+        db.SaveChanges();
+
+        return "Valid: checked in.";
+    }
+
+    // Today's Confirmed bookings: not checked in yet, and already checked in
+    private void LoadTodayLists()
+    {
+        var today = DateTime.Today.ToDateOnly();
+
+        var todays = db.Bookings
+                       .Include(b => b.User)
+                       .Include(b => b.TimeSlot)
+                       .ThenInclude(s => s.Facility)
+                       .Where(b => b.Status == "Confirmed" && b.TimeSlot.Date == today)
+                       .OrderBy(b => b.TimeSlot.StartTime)
+                       .ToList();
+
+        ViewBag.Ready = todays.Where(b => b.CheckedInAt == null).ToList();
+        ViewBag.CheckedIn = todays.Where(b => b.CheckedInAt != null).ToList();
     }
 
     // GET: AdminBooking/Charts
