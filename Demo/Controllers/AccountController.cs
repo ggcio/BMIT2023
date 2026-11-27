@@ -152,7 +152,7 @@ public class AccountController(DB db,
 
             TempData["Info"] = "Login successfully.";
 
-            hp.SignIn(u!.Email, u.Role.ToString(), vm.RememberMe);
+            await hp.SignIn(u!.Email, u.Role.ToString(), vm.RememberMe);
             
             if (string.IsNullOrEmpty(returnURL))
             {
@@ -169,11 +169,11 @@ public class AccountController(DB db,
     }
 
     // GET: Account/Logout
-    public IActionResult Logout(string? returnURL)
+    public async Task<IActionResult> Logout(string? returnURL)
     {
         TempData["Info"] = "Logout successfully.";
 
-        hp.SignOut();
+        await hp.SignOut();
 
         return RedirectToAction("Index", "Home");
     }

@@ -17,5 +17,18 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRequestLocalization("en-MY");
 app.UseSession();
+app.UseAuthentication();
+app.UseAuthorization();
+app.Use(async (context, next) =>
+{
+    await next();
+
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        context.Response.Headers.CacheControl = "no-store, no-cache, max-age=0, must-revalidate";
+        context.Response.Headers.Pragma = "no-cache";
+        context.Response.Headers.Expires = "0";
+    }
+});
 app.MapDefaultControllerRoute();
 app.Run();
