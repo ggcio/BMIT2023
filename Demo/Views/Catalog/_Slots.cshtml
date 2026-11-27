@@ -1,0 +1,80 @@
+@model Facility
+
+@{
+    var slots = (List<SlotRowVM>)ViewBag.Slots;
+    string date = ViewBag.Date;
+}
+
+@* Day links: today to today + 6, the selected day is bold without a link *@
+<p class="days">
+    @for (int i = 0; i < 7; i++)
+    {
+        var day = DateTime.Today.AddDays(i);
+        string value = day.ToString("yyyy-MM-dd");
+        string text = day.ToString("ddd d MMM");
+
+        if (i > 0)
+        {
+            <text> | </text>
+        }
+
+        if (value == date)
+        {
+            <b>@text</b>
+        }
+        else
+        {
+            <a href="/Catalog/Detail/@Model.Id?date=@value"
+               data-ajax="true"
+               data-ajax-update="#slots"
+               data-ajax-loading="#loader">@text</a>
+        }
+    }
+</p>
+
+@if (slots.Count == 0)
+{
+    <p>No time slots for this date.</p>
+}
+else
+{
+    @* Full and closed slots are disabled, so only available slots can be selected *@
+    <div class="slots">
+        @foreach (var s in slots)
+        {
+            string time = s.StartTime.ToString("HH:mm") + " - " + s.EndTime.ToString("HH:mm");
+
+            if (s.IsClosed)
+            {
+                <button type="button" class="slot" disabled>@time<small>Closed</small></button>
+            }
+            else if (s.SpotsLeft <= 0)
+            {
+                <button type="button" class="slot" disabled>@time<small>Full</small></button>
+            }
+            else
+            {
+                <button type="button" class="slot @(s.IsPeak ? "peak" : "")"
+                        data-slot="@s.Id"
+                        data-time="@time"
+                        data-peak="@(s.IsPeak ? "Yes" : "No")"
+                        data-price="@s.Price.ToString("0.00")"
+                        data-left="@s.SpotsLeft">
+                    @time<small>@s.SpotsLeft left@(s.IsPeak ? ", Peak" : "")</small>
+                </button>
+            }
+        }
+    </div>
+
+    @* Filled by the script in Detail.cshtml when a slot is clicked *@
+    <div id="panel" hidden>
+        <b>Time:</b> <span id="p-time"></span><br>
+        <b>Peak:</b> <span id="p-peak"></span><br>
+        <b>Price:</b> RM <span id="p-price"></span><br>
+        <b>Spots left:</b> <span id="p-left"></span><br>
+        @if (!User.IsInRole("admin"))
+        {
+            <a id="book">Book this slot</a>
+        }
+    </div>
+}
