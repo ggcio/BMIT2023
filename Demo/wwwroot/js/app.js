@@ -14,6 +14,9 @@ $(document).on('click', '[data-get]', e => {
 // Initiate POST request (AJAX-supported)
 $(document).on('click', '[data-post]', e => {
     e.preventDefault();
+    // Optional: data-confirm shows a confirm box first
+    const message = e.target.dataset.confirm;
+    if (message && !confirm(message)) return;
     const url = e.target.dataset.post;
     const f = $('<form>').appendTo(document.body)[0];
     f.method = 'post';

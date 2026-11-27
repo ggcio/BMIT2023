@@ -41,7 +41,7 @@
             <td>@s.Bookings.Count</td>
             <td>
                 <button data-get="/TimeSlot/Update/@s.Id">Update</button>
-                <button data-post="/TimeSlot/Delete/@s.Id">Delete</button>
+                <button data-post="/TimeSlot/Delete/@s.Id" data-confirm="Delete this time slot?">Delete</button>
             </td>
         </tr>
     }

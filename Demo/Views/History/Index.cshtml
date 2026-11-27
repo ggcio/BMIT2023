@@ -49,7 +49,7 @@ else
                     <a href="/Booking/Confirmation/@b.Id">Detail</a>
                     @if (cancelIds.Contains(b.Id))
                     {
-                        <button data-post="/History/Cancel/@b.Id">Cancel</button>
+                        <button data-post="/History/Cancel/@b.Id" data-confirm="Cancel this booking?">Cancel</button>
                     }
                 </td>
             </tr>

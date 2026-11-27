@@ -26,7 +26,7 @@
             <td>@c.Facilities.Count</td>
             <td>
                 <button data-get="/Category/Update/@c.Id">Update</button>
-                <button data-post="/Category/Delete/@c.Id">Delete</button>
+                <button data-post="/Category/Delete/@c.Id" data-confirm="Delete this category?">Delete</button>
             </td>
         </tr>
     }
