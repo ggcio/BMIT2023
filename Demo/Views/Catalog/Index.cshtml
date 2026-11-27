@@ -2,18 +2,23 @@
 @model IPagedList<Facility>
 
 @{
-    ViewBag.Title = "Catalog | Index";
+    ViewBag.Title = "Facilities";
+    ViewBag.HideTitle = true;
 }
 
-<form action="/Catalog"
-      data-ajax="true"
-      data-ajax-update="#target"
-      data-ajax-loading="#loader"
-      id="f">
-    <input type="search" name="name" value="@ViewBag.Name" autofocus>
-    <button>Search</button>
-    <img src="/images/loader.gif" id="loader" style="display: none">
-</form>
+<section class="hero">
+    <h2>Find and book a facility</h2>
+
+    <form action="/Catalog"
+          data-ajax="true"
+          data-ajax-update="#target"
+          data-ajax-loading="#loader"
+          id="f">
+        <input type="search" name="name" value="@ViewBag.Name" placeholder="Search by name" autofocus>
+        <button>Search</button>
+        <img src="/images/loader.gif" id="loader" style="display: none">
+    </form>
+</section>
 
 <div id="target">
     <partial name="_Index">

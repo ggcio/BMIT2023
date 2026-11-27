@@ -4,49 +4,54 @@
     ViewBag.Title = "Catalog | Detail";
 }
 
-@if (Model.Photos.Any())
-{
-    <p>
-        @foreach (var p in Model.Photos.OrderBy(x => x.Id))
+@* Two columns: photos on the left; details and the selection panel (#panel from _Slots) on the right *@
+<div class="facility">
+    <div class="photos">
+        @if (Model.Photos.Any())
         {
-            <img src="/photos/@p.FileName" width="300" height="200" alt="@Model.Name">
+            foreach (var p in Model.Photos.OrderBy(x => x.Id))
+            {
+                <img src="/photos/@p.FileName" alt="@Model.Name">
+            }
         }
-    </p>
-}
+        else
+        {
+            <img src="/images/photo.jpg" alt="@Model.Name">
+        }
+    </div>
 
-<table class="table detail">
-    <tr>
-        <th>Name</th>
-        <td>@Model.Name</td>
-    </tr>
-    <tr>
-        <th>Category</th>
-        <td>@Model.Category.Name</td>
-    </tr>
-    <tr>
-        <th>Location</th>
-        <td>@Model.Location</td>
-    </tr>
-    <tr>
-        <th>Capacity</th>
-        <td>@Model.Capacity</td>
-    </tr>
-    <tr>
-        <th>Hourly Rate</th>
-        <td>RM @Model.HourlyRate.ToString("0.00")</td>
-    </tr>
-    <tr>
-        <th>Peak Surcharge</th>
-        <td>RM @Model.PeakSurcharge.ToString("0.00")</td>
-    </tr>
-</table>
+    <div class="facility-info">
+        <span class="badge">@Model.Category.Name</span>
+        <h2>@Model.Name</h2>
 
-<p>Students (student email) book free.</p>
+        <table class="table detail">
+            <tr>
+                <th>Location</th>
+                <td>@Model.Location</td>
+            </tr>
+            <tr>
+                <th>Capacity</th>
+                <td>@Model.Capacity</td>
+            </tr>
+            <tr>
+                <th>Hourly Rate</th>
+                <td>RM @Model.HourlyRate.ToString("0.00")</td>
+            </tr>
+            <tr>
+                <th>Peak Surcharge</th>
+                <td>RM @Model.PeakSurcharge.ToString("0.00")</td>
+            </tr>
+        </table>
 
-<img src="/images/loader.gif" id="loader" style="display: none">
+        <p>Students (student email) book free.</p>
 
-<div id="slots">
-    <partial name="_Slots">
+        <img src="/images/loader.gif" id="loader" style="display: none">
+    </div>
+
+    @* #slots uses display: contents, so the day links, slot grid and #panel are placed by the .facility grid *@
+    <div id="slots">
+        <partial name="_Slots">
+    </div>
 </div>
 
 @section foot {

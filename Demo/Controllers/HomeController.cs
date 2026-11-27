@@ -4,9 +4,9 @@ namespace Demo.Controllers;
 
 public class HomeController : Controller
 {
-    // GET: Home/Index
+    // GET: Home/Index (the catalog is the landing page now)
     public IActionResult Index()
     {
-        return View();
+        return RedirectToAction("Index", "Catalog");
     }
 }

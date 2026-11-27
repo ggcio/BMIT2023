@@ -62,11 +62,12 @@
     <p>No photos yet.</p>
 }
 
-@foreach (var p in photos)
-{
-    <p>
-        <img src="/photos/@p.FileName" width="150" height="100">
-        <br>
-        <button data-post="/Facility/DeletePhoto/@p.Id">Delete</button>
-    </p>
-}
+<div class="photo-grid">
+    @foreach (var p in photos)
+    {
+        <div>
+            <img src="/photos/@p.FileName">
+            <button data-post="/Facility/DeletePhoto/@p.Id">Delete</button>
+        </div>
+    }
+</div>

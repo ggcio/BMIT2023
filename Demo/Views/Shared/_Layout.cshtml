@@ -15,72 +15,88 @@
 <body>
     <div class="info">@Html.Raw(TempData["Info"])</div>
 
+    @{
+        // Current controller, used to underline the current section
+        string c = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+        bool isMember = User.IsInRole("student") || User.IsInRole("public");
+    }
+
     <header>
         <h1><a href="/">Campus Sports Facility Reservation</a></h1>
 
-        @if (User.Identity!.IsAuthenticated)
-        {
-            <div>
-                @User.Identity.Name |
-                @(User.IsInRole("admin")  ? "Admin"  : "")
-                @(User.IsInRole("student") ? "Student" : "")
-                @(User.IsInRole("public") ? "Public" : "")
-            </div>
-        }
+        <nav>
+            <a href="/Catalog" class="@(c == "Catalog" ? "active" : "")">Facilities</a>
 
-        @if (User.IsInRole("student") || User.IsInRole("public"))
-        {
-            var user = User.Identity?.Name is string email
-                ? db.Users.Find(email)
-                : null;
-            var photoURL = user?.PhotoURL;
-            if (!string.IsNullOrEmpty(photoURL))
+            @if (isMember)
             {
-                <img src="/photos/@photoURL">
+                <a href="/History" class="@(c == "History" ? "active" : "")">My Bookings</a>
             }
-        }
+            @if (User.IsInRole("admin"))
+            {
+                <details class="dropdown @(c is "Admin" or "Category" or "Facility" or "TimeSlot" ? "active" : "")">
+                    <summary>Manage</summary>
+                    <div class="menu">
+                        <a href="/Admin/Users">Users</a>
+                        <a href="/Category">Categories</a>
+                        <a href="/Facility">Facilities</a>
+                        <a href="/TimeSlot">Time Slots</a>
+                    </div>
+                </details>
+                <details class="dropdown @(c == "AdminBooking" ? "active" : "")">
+                    <summary>Bookings</summary>
+                    <div class="menu">
+                        <a href="/AdminBooking">Bookings</a>
+                        <a href="/AdminBooking/CheckIn">Check In</a>
+                        <a href="/AdminBooking/Charts">Charts</a>
+                    </div>
+                </details>
+            }
+        </nav>
+
+        <div class="account">
+            @if (User.Identity!.IsAuthenticated)
+            {
+                string email = User.Identity.Name ?? "";
+                string role = User.IsInRole("admin") ? "Admin" : User.IsInRole("student") ? "Student" : "Public";
+
+                // Photo for student and public only; admin (or no photo) shows the first letter
+                string? photoURL = isMember ? db.Users.Find(email)?.PhotoURL : null;
+
+                <details class="dropdown">
+                    <summary>
+                        @if (!string.IsNullOrEmpty(photoURL))
+                        {
+                            <img src="/photos/@photoURL">
+                        }
+                        else
+                        {
+                            <span class="initial">@email.Substring(0, 1).ToUpper()</span>
+                        }
+                        <span>@email<small>@role</small></span>
+                    </summary>
+                    <div class="menu">
+                        @if (isMember)
+                        {
+                            <a href="/Account/UpdateProfile">Update Profile</a>
+                        }
+                        <a href="/Account/UpdatePassword">Update Password</a>
+                        <a href="/Account/Logout">Logout</a>
+                    </div>
+                </details>
+            }
+            else
+            {
+                <a href="/Account/Login">Login</a>
+                <a href="/Account/Register" class="register">Register</a>
+            }
+        </div>
     </header>
 
-    <nav>
-        <a href="/">Home</a>
-        <a href="/Catalog">Facilities</a>
-
-        @if (User.IsInRole("student") || User.IsInRole("public"))
-        {
-            <a href="/History">My Bookings</a>
-        }
-        @if (User.IsInRole("admin"))
-        {
-            <a href="/Admin/Users">Manage Users</a>
-            <a href="/Category">Categories</a>
-            <a href="/Facility">Facility Admin</a>
-            <a href="/TimeSlot">Time Slots</a>
-            <a href="/AdminBooking">Bookings</a>
-            <a href="/AdminBooking/CheckIn">Check In</a>
-            <a href="/AdminBooking/Charts">Charts</a>
-        }
-
-        <div></div>
-
-        @if (User.Identity.IsAuthenticated)
-        {
-            <a href="/Account/Logout">Logout</a>
-            <a href="/Account/UpdatePassword">Update Password</a>
-        }
-        else
-        {
-            <a href="/Account/Login">Login</a>
-            <a href="/Account/Register">Register</a>
-            <a href="/Account/ResetPassword">Reset Password</a>
-        }
-        @if (User.IsInRole("student") || User.IsInRole("public"))
-        {
-            <a href="/Account/UpdateProfile">Update Profile</a>
-        }
-    </nav>
-
     <main>
-        <h1>@ViewBag.Title</h1>
+        @if (ViewBag.HideTitle != true)
+        {
+            <h1>@ViewBag.Title</h1>
+        }
         @RenderBody()
     </main>
 
