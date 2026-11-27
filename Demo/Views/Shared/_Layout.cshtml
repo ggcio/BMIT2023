@@ -94,6 +94,16 @@
     <script src="/js/jquery.validate.min.js"></script>
     <script src="/js/jquery.validate.unobtrusive.min.js"></script>
     <script src="/js/app.js" asp-append-version="true"></script>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <script>
+            window.addEventListener('pageshow', event => {
+                if (event.persisted) {
+                    window.location.reload();
+                }
+            });
+        </script>
+    }
     @RenderSection("foot", false)
 </body>
 </html>

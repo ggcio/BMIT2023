@@ -80,7 +80,7 @@ public class Helper(IWebHostEnvironment en,
                == PasswordVerificationResult.Success;
     }
 
-    public void SignIn(string email, string role, bool rememberMe)
+    public async Task SignIn(string email, string role, bool rememberMe)
     {
         List<Claim> claims =
         [
@@ -97,12 +97,12 @@ public class Helper(IWebHostEnvironment en,
             IsPersistent = rememberMe,
         };
 
-        ct.HttpContext!.SignInAsync(principal, properties);
+        await ct.HttpContext!.SignInAsync(principal, properties);
     }
 
-    public void SignOut()
+    public async Task SignOut()
     {
-        ct.HttpContext!.SignOutAsync();
+        await ct.HttpContext!.SignOutAsync();
     }
 
     public string RandomPassword()
