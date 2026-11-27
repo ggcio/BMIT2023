@@ -33,10 +33,18 @@ public class AccountController(DB db,
         try
         {
             var result = await http.PostAsync("https://www.google.com/recaptcha/api/siteverify", data);
+
+            if (!result.IsSuccessStatusCode)
+            {
+                return false;
+            }
+
             var json = await result.Content.ReadAsStringAsync();
 
             using var doc = JsonDocument.Parse(json);
-            return doc.RootElement.GetProperty("success").GetBoolean();
+            return doc.RootElement.TryGetProperty("success", out var success) &&
+                   success.ValueKind == JsonValueKind.True &&
+                   success.GetBoolean();
         }
         catch
         {
