@@ -57,6 +57,14 @@
         <option value="">All</option>
     </select>
 
+    <label asp-for="GroupBy"></label>
+    <select asp-for="GroupBy">
+        <option value="Day">Day</option>
+        <option value="Week">Week</option>
+        <option value="Month">Month</option>
+    </select>
+    <span asp-validation-for="GroupBy"></span>
+
     <section>
         <button>Show</button>
         <a href="/Report">Reset</a>
@@ -97,12 +105,17 @@
         </div>
     </div>
 
-    <div>
-        <canvas id="bookingChart"></canvas>
-    </div>
-
-    <div>
-        <canvas id="revenueChart"></canvas>
+    @* Two charts per row where the width allows, one per row on narrow screens *@
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-top: 20px">
+        @foreach (var id in new[] { "bookingChart", "revenueChart", "facilityRevenueChart", "categoryRevenueChart",
+                                    "peakBookingChart", "peakRevenueChart", "roleChart", "hourChart" })
+        {
+            <div class="card">
+                <div class="card-body">
+                    <canvas id="@id"></canvas>
+                </div>
+            </div>
+        }
     </div>
 }
 
@@ -111,35 +124,41 @@
     {
         <script src="/js/chart.umd.min.js"></script>
         <script>
-            new Chart($('#bookingChart')[0], {
-                type: 'bar',
-                data: {
-                    labels: @Json.Serialize(ViewBag.FacilityLabels),
-                    datasets: [{
-                        label: 'Confirmed Bookings',
-                        data: @Json.Serialize(ViewBag.FacilityValues),
-                    }],
-                },
-                options: {
-                    plugins: { title: { display: true, text: 'Bookings per Facility' } },
-                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
-                },
-            });
+            // Draw one chart: bar charts start at 0, pie charts show a legend
+            function draw(id, type, title, labels, label, data, wholeNumbers) {
+                new Chart($('#' + id)[0], {
+                    type: type,
+                    data: { labels: labels, datasets: [{ label: label, data: data }] },
+                    options: {
+                        plugins: { title: { display: true, text: title } },
+                        scales: type == 'pie' ? {} : { y: { beginAtZero: true, ticks: { precision: wholeNumbers ? 0 : undefined } } },
+                    },
+                });
+            }
 
-            new Chart($('#revenueChart')[0], {
-                type: 'bar',
-                data: {
-                    labels: @Json.Serialize(ViewBag.RevenueLabels),
-                    datasets: [{
-                        label: 'Revenue (RM)',
-                        data: @Json.Serialize(ViewBag.RevenueValues),
-                    }],
-                },
-                options: {
-                    plugins: { title: { display: true, text: 'Revenue (RM) per Day' } },
-                    scales: { y: { beginAtZero: true } },
-                },
-            });
+            draw('bookingChart', 'bar', 'Bookings per Facility',
+                 @Json.Serialize(ViewBag.FacilityLabels), 'Confirmed Bookings', @Json.Serialize(ViewBag.FacilityValues), true);
+
+            draw('revenueChart', 'bar', @Json.Serialize(ViewBag.RevenueTitle),
+                 @Json.Serialize(ViewBag.RevenueLabels), 'Revenue (RM)', @Json.Serialize(ViewBag.RevenueValues), false);
+
+            draw('facilityRevenueChart', 'bar', 'Revenue (RM) by Facility',
+                 @Json.Serialize(ViewBag.FacilityRevenueLabels), 'Revenue (RM)', @Json.Serialize(ViewBag.FacilityRevenueValues), false);
+
+            draw('categoryRevenueChart', 'bar', 'Revenue (RM) by Category',
+                 @Json.Serialize(ViewBag.CategoryRevenueLabels), 'Revenue (RM)', @Json.Serialize(ViewBag.CategoryRevenueValues), false);
+
+            draw('peakBookingChart', 'pie', 'Peak vs Off-peak: Confirmed Bookings',
+                 ['Peak', 'Off-peak'], 'Confirmed Bookings', @Json.Serialize(ViewBag.PeakBookingValues), true);
+
+            draw('peakRevenueChart', 'pie', 'Peak vs Off-peak: Revenue (RM)',
+                 ['Peak', 'Off-peak'], 'Revenue (RM)', @Json.Serialize(ViewBag.PeakRevenueValues), false);
+
+            draw('roleChart', 'pie', 'Student vs Public: Confirmed Bookings',
+                 ['Student', 'Public'], 'Confirmed Bookings', @Json.Serialize(ViewBag.RoleValues), true);
+
+            draw('hourChart', 'bar', 'Busiest Hours: Confirmed Bookings',
+                 @Json.Serialize(ViewBag.HourLabels), 'Confirmed Bookings', @Json.Serialize(ViewBag.HourValues), true);
         </script>
     }
 }

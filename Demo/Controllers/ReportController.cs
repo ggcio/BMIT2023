@@ -81,7 +81,7 @@ public class ReportController(DB db, Helper hp) : Controller
         ViewBag.FacilityLabels = facilities.Select(f => f.Name).ToList();
         ViewBag.FacilityValues = facilities.Select(f => f.Count).ToList();
 
-        // (3) Chart 2: paid, not refunded revenue per day, by PaidAt ---------
+        // (3) Chart 2: paid, not refunded revenue, by PaidAt, grouped --------
         var start = from.ToDateTime(TimeOnly.MinValue);
         var end   = to.AddDays(1).ToDateTime(TimeOnly.MinValue);
 
@@ -91,19 +91,59 @@ public class ReportController(DB db, Helper hp) : Controller
                                      facilityIds.Contains(p.Booking.TimeSlot.FacilityId) &&
                                      p.PaidAt >= start &&
                                      p.PaidAt < end)
-                         .Select(p => new { p.PaidAt, p.Amount })
+                         .Select(p => new
+                         {
+                             p.Amount,
+                             PaidDate = p.PaidAt!.Value.Date,
+                             p.Booking.TimeSlot.FacilityId,
+                             p.Booking.TimeSlot.Facility.CategoryId,
+                             p.Booking.TimeSlot.IsPeak,
+                         })
                          .ToList();
 
-        var days = Enumerable.Range(0, to.DayNumber - from.DayNumber + 1)
-                             .Select(n => from.AddDays(n))
-                             .ToList();
+        // Start of the period a date belongs to (weeks start on Monday)
+        DateOnly PeriodOf(DateOnly d) => vm.GroupBy switch
+        {
+            "Week"  => d.AddDays(-(((int)d.DayOfWeek + 6) % 7)),
+            "Month" => new DateOnly(d.Year, d.Month, 1),
+            _       => d,
+        };
 
-        ViewBag.RevenueLabels = days.Select(d => d.ToString("dd MMM")).ToList();
-        ViewBag.RevenueValues = days.Select(d => payments.Where(p => p.PaidAt!.Value.ToDateOnly() == d)
-                                                         .Sum(p => p.Amount))
-                                    .ToList();
+        // Every period from the one holding From up to To
+        var periods = new List<DateOnly>();
+        for (var p = PeriodOf(from); p <= to; p = vm.GroupBy == "Month" ? p.AddMonths(1) : p.AddDays(vm.GroupBy == "Week" ? 7 : 1))
+        {
+            periods.Add(p);
+        }
 
-        // (4) Summary cards ---------------------------------------------------
+        var labelFormat = vm.GroupBy == "Month" ? "MMM yyyy" : "dd MMM";
+
+        ViewBag.RevenueTitle  = $"Revenue (RM) per {vm.GroupBy}";
+        ViewBag.RevenueLabels = periods.Select(p => p.ToString(labelFormat)).ToList();
+        ViewBag.RevenueValues = periods.Select(p => payments.Where(x => PeriodOf(DateOnly.FromDateTime(x.PaidDate)) == p)
+                                                            .Sum(x => x.Amount))
+                                       .ToList();
+
+        // Revenue by facility and by category (every one shown, 0 if none)
+        var facilityNames = db.Facilities
+                              .Where(f => facilityIds.Contains(f.Id))
+                              .OrderBy(f => f.Id)
+                              .Select(f => new { f.Id, f.Name })
+                              .ToList();
+
+        ViewBag.FacilityRevenueLabels = facilityNames.Select(f => f.Name).ToList();
+        ViewBag.FacilityRevenueValues = facilityNames.Select(f => payments.Where(x => x.FacilityId == f.Id).Sum(x => x.Amount)).ToList();
+
+        var categories = db.Categories
+                           .Where(c => vm.CategoryId == null || c.Id == vm.CategoryId)
+                           .OrderBy(c => c.Id)
+                           .Select(c => new { c.Id, c.Name })
+                           .ToList();
+
+        ViewBag.CategoryRevenueLabels = categories.Select(c => c.Name).ToList();
+        ViewBag.CategoryRevenueValues = categories.Select(c => payments.Where(x => x.CategoryId == c.Id).Sum(x => x.Amount)).ToList();
+
+        // (4) Bookings by slot date (summary cards and booking charts) -------
         var bookings = db.Bookings
                          .Where(b => facilityIds.Contains(b.TimeSlot.FacilityId) &&
                                      b.TimeSlot.Date >= from &&
@@ -114,10 +154,27 @@ public class ReportController(DB db, Helper hp) : Controller
                              b.RefundStatus,
                              b.CheckedInAt,
                              b.TimeSlot.Date,
+                             b.TimeSlot.StartTime,
                              b.TimeSlot.EndTime,
+                             b.TimeSlot.IsPeak,
+                             b.User.Role,
                              Amount = b.Payment == null ? 0 : b.Payment.Amount,
                          })
                          .ToList();
+
+        var confirmed = bookings.Where(b => b.Status == "Confirmed").ToList();
+
+        // Peak vs off-peak: confirmed bookings and revenue
+        ViewBag.PeakBookingValues = new[] { confirmed.Count(b => b.IsPeak), confirmed.Count(b => !b.IsPeak) };
+        ViewBag.PeakRevenueValues = new[] { payments.Where(x => x.IsPeak).Sum(x => x.Amount), payments.Where(x => !x.IsPeak).Sum(x => x.Amount) };
+
+        // Student vs public: confirmed bookings by the user's role
+        ViewBag.RoleValues = new[] { confirmed.Count(b => b.Role == UserRole.student), confirmed.Count(b => b.Role == UserRole.@public) };
+
+        // Busiest hours: confirmed bookings by start time, 08:00 to 19:00
+        var hours = Enumerable.Range(8, 12).ToList();
+        ViewBag.HourLabels = hours.Select(h => $"{h:00}:00").ToList();
+        ViewBag.HourValues = hours.Select(h => confirmed.Count(b => b.StartTime.Hour == h)).ToList();
 
         // Bookings by slot date
         ViewBag.Total     = bookings.Count;

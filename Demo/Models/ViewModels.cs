@@ -283,4 +283,9 @@ public class ReportFilterVM
 
     [DisplayName("Category")]
     public int? CategoryId { get; set; }
+
+    // Revenue chart periods
+    [RegularExpression("^(Day|Week|Month)$", ErrorMessage = "Invalid {0}.")]
+    [DisplayName("Group by")]
+    public string GroupBy { get; set; } = "Day";
 }
