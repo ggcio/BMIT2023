@@ -67,6 +67,36 @@
 {
     <p>Showing @ViewBag.RangeText</p>
 
+    <div class="cards">
+        <div class="card">
+            <div class="card-body">
+                <p>Bookings (by slot date)</p>
+                <h3>@ViewBag.Total total</h3>
+                <p>Confirmed @ViewBag.Confirmed &middot; Pending @ViewBag.Pending &middot; Cancelled @ViewBag.Cancelled</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p>Net revenue (paid, not refunded)</p>
+                <h3>RM @(((decimal)ViewBag.NetRevenue).ToString("0.00"))</h3>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p>Refunds (by slot date)</p>
+                <h3>Refund due: @ViewBag.RefundDueCount (RM @(((decimal)ViewBag.RefundDueAmount).ToString("0.00")))</h3>
+                <p>Refunded: @ViewBag.RefundedCount (RM @(((decimal)ViewBag.RefundedAmount).ToString("0.00")))</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p>Attendance (ended Confirmed slots)</p>
+                <h3>Check-in rate @ViewBag.CheckInRate</h3>
+                <p>Checked in @ViewBag.CheckedIn &middot; No-shows @ViewBag.NoShows</p>
+            </div>
+        </div>
+    </div>
+
     <div>
         <canvas id="bookingChart"></canvas>
     </div>

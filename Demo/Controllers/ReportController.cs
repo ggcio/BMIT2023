@@ -103,6 +103,51 @@ public class ReportController(DB db, Helper hp) : Controller
                                                          .Sum(p => p.Amount))
                                     .ToList();
 
+        // (4) Summary cards ---------------------------------------------------
+        var bookings = db.Bookings
+                         .Where(b => facilityIds.Contains(b.TimeSlot.FacilityId) &&
+                                     b.TimeSlot.Date >= from &&
+                                     b.TimeSlot.Date <= to)
+                         .Select(b => new
+                         {
+                             b.Status,
+                             b.RefundStatus,
+                             b.CheckedInAt,
+                             b.TimeSlot.Date,
+                             b.TimeSlot.EndTime,
+                             Amount = b.Payment == null ? 0 : b.Payment.Amount,
+                         })
+                         .ToList();
+
+        // Bookings by slot date
+        ViewBag.Total     = bookings.Count;
+        ViewBag.Confirmed = bookings.Count(b => b.Status == "Confirmed");
+        ViewBag.Pending   = bookings.Count(b => b.Status == "Pending");
+        ViewBag.Cancelled = bookings.Count(b => b.Status == "Cancelled");
+
+        // Net revenue: same payments as the revenue chart
+        ViewBag.NetRevenue = payments.Sum(p => p.Amount);
+
+        // Refunds
+        var refundDue = bookings.Where(b => b.RefundStatus == "RefundDue").ToList();
+        var refunded  = bookings.Where(b => b.RefundStatus == "Refunded").ToList();
+
+        ViewBag.RefundDueCount  = refundDue.Count;
+        ViewBag.RefundDueAmount = refundDue.Sum(b => b.Amount);
+        ViewBag.RefundedCount   = refunded.Count;
+        ViewBag.RefundedAmount  = refunded.Sum(b => b.Amount);
+
+        // Attendance: Confirmed bookings whose slot has already ended
+        var now   = DateTime.Now;
+        var ended = bookings.Where(b => b.Status == "Confirmed" && b.Date.ToDateTime(b.EndTime) <= now).ToList();
+
+        int checkedIn = ended.Count(b => b.CheckedInAt != null);
+        int noShows   = ended.Count(b => b.CheckedInAt == null);
+
+        ViewBag.CheckedIn   = checkedIn;
+        ViewBag.NoShows     = noShows;
+        ViewBag.CheckInRate = ended.Count == 0 ? "-" : $"{100.0 * checkedIn / ended.Count:0}%";
+
         return View(vm);
     }
 }
