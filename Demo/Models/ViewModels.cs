@@ -249,3 +249,38 @@ public class AdminUserUpdateVM
     [StringLength(100)]
     public string Name { get; set; }
 }
+
+public class ReportFilterVM
+{
+    // "Date" uses From/To, "Month" uses the month and year fields
+    [RegularExpression("^(Date|Month)$", ErrorMessage = "Invalid {0}.")]
+    public string Mode { get; set; } = "Date";
+
+    [DataType(DataType.Date)]
+    public DateOnly? From { get; set; }
+
+    [DataType(DataType.Date)]
+    public DateOnly? To { get; set; }
+
+    [Range(1, 12, ErrorMessage = "Invalid {0}.")]
+    [DisplayName("From Month")]
+    public int? FromMonth { get; set; }
+
+    [Range(2000, 2100, ErrorMessage = "Invalid {0}.")]
+    [DisplayName("From Year")]
+    public int? FromYear { get; set; }
+
+    [Range(1, 12, ErrorMessage = "Invalid {0}.")]
+    [DisplayName("To Month")]
+    public int? ToMonth { get; set; }
+
+    [Range(2000, 2100, ErrorMessage = "Invalid {0}.")]
+    [DisplayName("To Year")]
+    public int? ToYear { get; set; }
+
+    [DisplayName("Facility")]
+    public int? FacilityId { get; set; }
+
+    [DisplayName("Category")]
+    public int? CategoryId { get; set; }
+}

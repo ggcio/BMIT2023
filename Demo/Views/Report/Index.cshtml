@@ -1,0 +1,115 @@
+@model ReportFilterVM
+
+@{
+    ViewBag.Title = "Report | Index";
+    DateOnly today = ViewBag.Today;
+    var f = "yyyy-MM-dd";
+}
+
+<p>
+    Quick:
+    <a href="/Report?From=@today.AddDays(-6).ToString(f)&To=@today.ToString(f)">Last 7 days</a> |
+    <a href="/Report?From=@today.AddDays(-29).ToString(f)&To=@today.ToString(f)">Last 30 days</a> |
+    <a href="/Report?From=@(new DateOnly(today.Year, today.Month, 1).ToString(f))&To=@today.ToString(f)">This month</a>
+</p>
+
+<form method="get" class="form">
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <label>Range</label>
+    <div>
+        <label><input type="radio" asp-for="Mode" value="Date"> By date</label>
+        <label><input type="radio" asp-for="Mode" value="Month"> By month</label>
+    </div>
+    <span asp-validation-for="Mode"></span>
+
+    <label asp-for="From"></label>
+    <input asp-for="From">
+    <span asp-validation-for="From"></span>
+
+    <label asp-for="To"></label>
+    <input asp-for="To">
+    <span asp-validation-for="To"></span>
+
+    <label>From Month</label>
+    <div>
+        <select asp-for="FromMonth" asp-items="ViewBag.MonthList"></select>
+        <select asp-for="FromYear" asp-items="ViewBag.YearList"></select>
+    </div>
+    <span asp-validation-for="FromMonth"></span>
+    <span asp-validation-for="FromYear"></span>
+
+    <label>To Month</label>
+    <div>
+        <select asp-for="ToMonth" asp-items="ViewBag.MonthList"></select>
+        <select asp-for="ToYear" asp-items="ViewBag.YearList"></select>
+    </div>
+    <span asp-validation-for="ToMonth"></span>
+    <span asp-validation-for="ToYear"></span>
+
+    <label asp-for="FacilityId"></label>
+    <select asp-for="FacilityId" asp-items="ViewBag.FacilityList">
+        <option value="">All</option>
+    </select>
+
+    <label asp-for="CategoryId"></label>
+    <select asp-for="CategoryId" asp-items="ViewBag.CategoryList">
+        <option value="">All</option>
+    </select>
+
+    <section>
+        <button>Show</button>
+        <a href="/Report">Reset</a>
+    </section>
+</form>
+
+@if (ViewBag.HasData)
+{
+    <p>Showing @ViewBag.RangeText</p>
+
+    <div>
+        <canvas id="bookingChart"></canvas>
+    </div>
+
+    <div>
+        <canvas id="revenueChart"></canvas>
+    </div>
+}
+
+@section foot {
+    @if (ViewBag.HasData)
+    {
+        <script src="/js/chart.umd.min.js"></script>
+        <script>
+            new Chart($('#bookingChart')[0], {
+                type: 'bar',
+                data: {
+                    labels: @Json.Serialize(ViewBag.FacilityLabels),
+                    datasets: [{
+                        label: 'Confirmed Bookings',
+                        data: @Json.Serialize(ViewBag.FacilityValues),
+                    }],
+                },
+                options: {
+                    plugins: { title: { display: true, text: 'Bookings per Facility' } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                },
+            });
+
+            new Chart($('#revenueChart')[0], {
+                type: 'bar',
+                data: {
+                    labels: @Json.Serialize(ViewBag.RevenueLabels),
+                    datasets: [{
+                        label: 'Revenue (RM)',
+                        data: @Json.Serialize(ViewBag.RevenueValues),
+                    }],
+                },
+                options: {
+                    plugins: { title: { display: true, text: 'Revenue (RM) per Day' } },
+                    scales: { y: { beginAtZero: true } },
+                },
+            });
+        </script>
+    }
+}
