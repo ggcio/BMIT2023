@@ -401,6 +401,16 @@ label > * {
     background: var(--nav);
 }
 
+.btn.secondary {
+    background: var(--surface);
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+
+.btn.secondary:hover {
+    background: var(--soft);
+}
+
 .btn + .btn {
     margin-left: 8px;
 }
@@ -645,7 +655,10 @@ form[action$="/Delete"] button:hover {
 /* Slot Selection ------------------------------------------------------------- */
 
 /* .slot sets its own colours so the base button style does not turn it green */
-.days b { color: var(--primary); }
+.days { display: flex; flex-wrap: wrap; gap: 8px; }
+.day { display: flex; flex-direction: column; align-items: center; min-width: 76px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; background-color: var(--surface); text-decoration: none; }
+.day:hover { background-color: var(--soft); }
+.day.selected { background-color: var(--primary); border-color: var(--primary); color: var(--surface); }
 .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 5px; }
 .slot { padding: 5px; border: 1px solid var(--line); background-color: var(--surface); color: var(--ink); cursor: pointer; }
 .slot:hover { background-color: var(--soft); }

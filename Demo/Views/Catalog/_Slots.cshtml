@@ -5,29 +5,23 @@
     string date = ViewBag.Date;
 }
 
-@* Day links: today to today + 6, the selected day is bold without a link *@
+@* Day tabs: today to today + 6, the selected day is a span without a link *@
 <p class="days">
     @for (int i = 0; i < 7; i++)
     {
         var day = DateTime.Today.AddDays(i);
         string value = day.ToString("yyyy-MM-dd");
-        string text = day.ToString("ddd d MMM");
-
-        if (i > 0)
-        {
-            <text> | </text>
-        }
 
         if (value == date)
         {
-            <b>@text</b>
+            <span class="day selected" aria-current="date">@day.ToString("ddd")<small>@day.ToString("d MMM")</small></span>
         }
         else
         {
-            <a href="/Catalog/Detail/@Model.Id?date=@value"
+            <a href="/Catalog/Detail/@Model.Id?date=@value" class="day"
                data-ajax="true"
                data-ajax-update="#slots"
-               data-ajax-loading="#loader">@text</a>
+               data-ajax-loading="#loader">@day.ToString("ddd")<small>@day.ToString("d MMM")</small></a>
         }
     }
 </p>
