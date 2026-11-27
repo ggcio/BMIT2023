@@ -24,6 +24,7 @@ public class CatalogController(DB db) : Controller
 
         var searched = db.Facilities
                          .Include(f => f.Category)
+                         .Include(f => f.Photos)
                          .Where(f => categoryId == null || f.CategoryId == categoryId)
                          .Where(f => f.Name.Contains(name));
 
@@ -68,6 +69,7 @@ public class CatalogController(DB db) : Controller
     {
         var m = db.Facilities
                   .Include(f => f.Category)
+                  .Include(f => f.Photos)
                   .FirstOrDefault(f => f.Id == id);
 
         if (m == null)
