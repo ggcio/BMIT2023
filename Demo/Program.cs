@@ -21,14 +21,19 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.Use(async (context, next) =>
 {
-    await next();
-
-    if (context.User.Identity?.IsAuthenticated == true)
+    // Set the headers just before the response starts (after that they are read-only)
+    context.Response.OnStarting(() =>
     {
-        context.Response.Headers.CacheControl = "no-store, no-cache, max-age=0, must-revalidate";
-        context.Response.Headers.Pragma = "no-cache";
-        context.Response.Headers.Expires = "0";
-    }
+        if (context.User.Identity?.IsAuthenticated == true)
+        {
+            context.Response.Headers.CacheControl = "no-store, no-cache, max-age=0, must-revalidate";
+            context.Response.Headers.Pragma = "no-cache";
+            context.Response.Headers.Expires = "0";
+        }
+        return Task.CompletedTask;
+    });
+
+    await next();
 });
-app.MapDefaultControllerRoute();
+app.MapControllerRoute("default", "{controller=Catalog}/{action=Index}/{id?}");
 app.Run();

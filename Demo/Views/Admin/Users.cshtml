@@ -4,13 +4,11 @@
     ViewBag.Title = "Admin | Manage Users";
 }
 
-<h2>Manage Users</h2>
-
 <p>
-    <a href="/Admin/Insert">Add User</a>
+    <a href="/Admin/Insert" class="btn">Add User</a>
 </p>
 
-<table>
+<table class="table">
     <thead>
         <tr>
             <th>Email</th>
@@ -38,29 +36,31 @@
                 <td>@user.FailedAttempts</td>
                 <td>@status</td>
                 <td>
-                    @if (user.IsBlocked || isTemporarilyLocked || user.FailedAttempts > 0)
-                    {
-                        <form asp-action="Unblock" method="post">
-                            <input type="hidden" name="email" value="@user.Email">
-                            <button type="submit">Unblock and reset</button>
-                        </form>
-                    }
-                    @if (user.Role != UserRole.admin)
-                    {
-                        <a href="/Admin/Update?email=@user.Email">Edit</a>
-
-                        if (!user.IsBlocked)
+                    <div class="actions">
+                        @if (user.IsBlocked || isTemporarilyLocked || user.FailedAttempts > 0)
                         {
-                            <form asp-action="Block" method="post">
+                            <form asp-action="Unblock" method="post">
                                 <input type="hidden" name="email" value="@user.Email">
-                                <button type="submit" onclick="return confirm('Block @user.Email?')">Block</button>
+                                <button type="submit">Unblock and reset</button>
                             </form>
                         }
-                        <form asp-action="Delete" method="post">
-                            <input type="hidden" name="email" value="@user.Email">
-                            <button type="submit" onclick="return confirm('Delete @user.Email? This cannot be undone.')">Delete</button>
-                        </form>
-                    }
+                        @if (user.Role != UserRole.admin)
+                        {
+                            <a href="/Admin/Update?email=@user.Email">Edit</a>
+
+                            if (!user.IsBlocked)
+                            {
+                                <form asp-action="Block" method="post">
+                                    <input type="hidden" name="email" value="@user.Email">
+                                    <button type="submit" onclick="return confirm('Block @user.Email?')">Block</button>
+                                </form>
+                            }
+                            <form asp-action="Delete" method="post">
+                                <input type="hidden" name="email" value="@user.Email">
+                                <button type="submit" onclick="return confirm('Delete @user.Email? This cannot be undone.')">Delete</button>
+                            </form>
+                        }
+                    </div>
                 </td>
             </tr>
         }

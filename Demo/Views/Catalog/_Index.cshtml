@@ -25,8 +25,8 @@
 <input type="hidden" name="sort" value="@sort" form="f">
 <input type="hidden" name="dir" value="@dir" form="f">
 
-@* Category filter: the selected one is shown in bold without a link *@
-<p>
+@* Category filter chips: the selected one is shown in bold without a link *@
+<p class="chips">
     @if (categoryId == null)
     {
         <b>All</b>
@@ -41,7 +41,6 @@
 
     @foreach (Category c in ViewBag.Categories)
     {
-        <text> | </text>
         if (c.Id == categoryId)
         {
             <b>@c.Name</b>
@@ -56,7 +55,7 @@
     }
 </p>
 
-<p>
+<p class="chips">
     Sort by:
     @foreach (var (field, text) in fields)
     {
@@ -72,10 +71,10 @@
         }
 
         <a href="/Catalog?categoryId=@categoryId&name=@Uri.EscapeDataString(name)&sort=@field&dir=@d"
+           class="@(field == sort ? "active" : "")"
            data-ajax="true"
            data-ajax-update="#target"
            data-ajax-loading="#loader">@(text + arrow)</a>
-        <text> </text>
     }
 </p>
 
@@ -89,48 +88,25 @@
     <p>No facilities found.</p>
 }
 
-@foreach (var f in Model)
-{
-    // First photo (lowest Id), or null when the facility has none
-    var photo = f.Photos.OrderBy(p => p.Id).FirstOrDefault();
+<div class="cards">
+    @foreach (var f in Model)
+    {
+        // First photo (lowest Id), or the default image when the facility has none
+        var photo = f.Photos.OrderBy(p => p.Id).FirstOrDefault();
+        string src = photo != null ? "/photos/" + photo.FileName : "/images/photo.jpg";
 
-    <table class="table detail">
-        @if (photo != null)
-        {
-            <tr>
-                <td colspan="2">
-                    <img src="/photos/@photo.FileName" width="300" height="200" alt="@f.Name">
-                </td>
-            </tr>
-        }
-        <tr>
-            <th>Name</th>
-            <td>@f.Name</td>
-        </tr>
-        <tr>
-            <th>Category</th>
-            <td>@f.Category.Name</td>
-        </tr>
-        <tr>
-            <th>Location</th>
-            <td>@f.Location</td>
-        </tr>
-        <tr>
-            <th>Capacity</th>
-            <td>@f.Capacity</td>
-        </tr>
-        <tr>
-            <th>Hourly Rate</th>
-            <td>RM @f.HourlyRate.ToString("0.00")</td>
-        </tr>
-        <tr>
-            <td colspan="2">
-                <a href="/Catalog/Detail/@f.Id">Details</a>
-            </td>
-        </tr>
-    </table>
-    <br>
-}
+        <div class="card">
+            <img src="@src" alt="@f.Name">
+            <div class="card-body">
+                <span class="badge">@f.Category.Name</span>
+                <h3>@f.Name</h3>
+                <p>@f.Location</p>
+                <p>RM @f.HourlyRate.ToString("0.00") / hour &middot; Capacity @f.Capacity</p>
+                <a href="/Catalog/Detail/@f.Id">View slots</a>
+            </div>
+        </div>
+    }
+</div>
 
 @{
     var options = PagedListRenderOptions.ClassicPlusFirstAndLast;

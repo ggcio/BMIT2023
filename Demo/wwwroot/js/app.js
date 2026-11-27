@@ -1,4 +1,10 @@
-﻿// Initiate GET request (AJAX-supported)
+﻿// Dropdown: a click closes every open dropdown except the one clicked in
+$(document).on('click', e => {
+    const current = $(e.target).closest('details.dropdown')[0];
+    $('details.dropdown[open]').not(current).prop('open', false);
+});
+
+// Initiate GET request (AJAX-supported)
 $(document).on('click', '[data-get]', e => {
     e.preventDefault();
     const url = e.target.dataset.get;
