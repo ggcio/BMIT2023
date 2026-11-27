@@ -107,6 +107,11 @@ public class CatalogController(DB db) : Controller
 
         ViewBag.Date = date.Value.ToString("yyyy-MM-dd");
 
+        if (Request.IsAjax())
+        {
+            return PartialView("_Slots", m);
+        }
+
         return View(m);
     }
 }

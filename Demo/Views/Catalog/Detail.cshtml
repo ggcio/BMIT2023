@@ -41,60 +41,32 @@
     </tr>
 </table>
 
-@{
-    var slots = (List<SlotRowVM>)ViewBag.Slots;
-}
-
-<form method="get" action="/Catalog/Detail/@Model.Id">
-    <input type="date" name="date" value="@ViewBag.Date"
-           min="@DateTime.Today.ToString("yyyy-MM-dd")"
-           max="@DateTime.Today.AddDays(6).ToString("yyyy-MM-dd")">
-    <button>Show</button>
-</form>
-
 <p>Students (student email) book free.</p>
 
-@if (slots.Count == 0)
-{
-    <p>No time slots for this date.</p>
-}
-else
-{
-    <table class="table">
-        <tr>
-            <th>Time</th>
-            <th>Peak</th>
-            <th>Price</th>
-            <th>Availability</th>
-        </tr>
+<img src="/images/loader.gif" id="loader" style="display: none">
 
-        @foreach (var s in slots)
-        {
-            <tr>
-                <td>@s.StartTime.ToString("HH:mm") - @s.EndTime.ToString("HH:mm")</td>
-                <td>@(s.IsPeak ? "Yes" : "No")</td>
-                <td>RM @s.Price.ToString("0.00")</td>
-                <td>
-                    @if (s.IsClosed)
-                    {
-                        <text>Closed</text>
-                    }
-                    else if (s.SpotsLeft <= 0)
-                    {
-                        <text>Full</text>
-                    }
-                    else
-                    {
-                        <text>@s.SpotsLeft left</text>
-                        if (!User.IsInRole("admin"))
-                        {
-                            <a href="/Booking/Create?slotId=@s.Id">Book</a>
-                        }
-                    }
-                </td>
-            </tr>
-        }
-    </table>
+<div id="slots">
+    <partial name="_Slots">
+</div>
+
+@section foot {
+    <script>
+        // Bound on document, so it still works after AJAX replaces #slots
+        $(document).on('click', '[data-slot]', e => {
+            const b = e.currentTarget;
+
+            $('.slot').removeClass('selected');
+            $(b).addClass('selected');
+
+            $('#p-time').text(b.dataset.time);
+            $('#p-peak').text(b.dataset.peak);
+            $('#p-price').text(b.dataset.price);
+            $('#p-left').text(b.dataset.left);
+            $('#book').attr('href', '/Booking/Create?slotId=' + b.dataset.slot);
+
+            $('#panel').prop('hidden', false);
+        });
+    </script>
 }
 
 <p>
