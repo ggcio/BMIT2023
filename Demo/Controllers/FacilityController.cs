@@ -2,12 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Net;
 using X.PagedList.Extensions;
 
 namespace Demo.Controllers;
 
 [Authorize(Roles = "admin")]
-public class FacilityController(DB db) : Controller
+public class FacilityController(DB db, Helper hp) : Controller
 {
     // GET: Facility/Index
     public IActionResult Index(string? name, string? sort, string? dir, int page = 1)
@@ -129,6 +130,7 @@ public class FacilityController(DB db) : Controller
         };
 
         ViewBag.CategoryList = new SelectList(db.Categories.OrderBy(c => c.Name), "Id", "Name");
+        ViewBag.Photos = db.FacilityPhotos.Where(p => p.FacilityId == f.Id).OrderBy(p => p.Id).ToList();
         return View(vm);
     }
 
@@ -168,7 +170,99 @@ public class FacilityController(DB db) : Controller
         }
 
         ViewBag.CategoryList = new SelectList(db.Categories.OrderBy(c => c.Name), "Id", "Name");
+        ViewBag.Photos = db.FacilityPhotos.Where(p => p.FacilityId == f.Id).OrderBy(p => p.Id).ToList();
         return View(vm);
+    }
+
+    // POST: Facility/AddPhotos
+    [HttpPost]
+    public IActionResult AddPhotos(int? id, List<IFormFile> photos)
+    {
+        var f = db.Facilities.Find(id);
+
+        if (f == null)
+        {
+            return RedirectToAction("Index");
+        }
+
+        int existing = db.FacilityPhotos.Count(p => p.FacilityId == f.Id);
+
+        if (photos.Count == 0)
+        {
+            TempData["Info"] = "Please select at least one photo.";
+            return RedirectToAction("Update", new { id = f.Id });
+        }
+
+        if (existing + photos.Count > 5)
+        {
+            TempData["Info"] = "A facility can have at most 5 photos.";
+            return RedirectToAction("Update", new { id = f.Id });
+        }
+
+        // Check every file first, so nothing is saved if one is invalid
+        foreach (var p in photos)
+        {
+            var err = hp.ValidatePhoto(p);
+            if (err != "")
+            {
+                // Layout shows Info as raw HTML, so encode the user's file name
+                TempData["Info"] = $"{WebUtility.HtmlEncode(p.FileName)}: {err}";
+                return RedirectToAction("Update", new { id = f.Id });
+            }
+        }
+
+        // Save every file first; if one fails (e.g. a fake image), remove the ones saved so far
+        var saved = new List<string>();
+        foreach (var p in photos)
+        {
+            try
+            {
+                saved.Add(hp.SavePhoto(p, "photos", 600, 400));
+            }
+            catch
+            {
+                foreach (var file in saved)
+                {
+                    hp.DeletePhoto(file, "photos");
+                }
+
+                TempData["Info"] = $"{WebUtility.HtmlEncode(p.FileName)}: Photo could not be processed.";
+                return RedirectToAction("Update", new { id = f.Id });
+            }
+        }
+
+        foreach (var file in saved)
+        {
+            db.FacilityPhotos.Add(new()
+            {
+                FileName = file,
+                FacilityId = f.Id,
+            });
+        }
+        db.SaveChanges();
+
+        TempData["Info"] = $"{photos.Count} photo(s) added.";
+        return RedirectToAction("Update", new { id = f.Id });
+    }
+
+    // POST: Facility/DeletePhoto
+    [HttpPost]
+    public IActionResult DeletePhoto(int? id)
+    {
+        var p = db.FacilityPhotos.Find(id);
+
+        if (p == null)
+        {
+            return RedirectToAction("Index");
+        }
+
+        db.FacilityPhotos.Remove(p);
+        db.SaveChanges();
+
+        hp.DeletePhoto(p.FileName, "photos");
+
+        TempData["Info"] = "Photo deleted.";
+        return RedirectToAction("Update", new { id = p.FacilityId });
     }
 
     // POST: Facility/Delete
@@ -185,8 +279,16 @@ public class FacilityController(DB db) : Controller
             }
             else
             {
+                // Read the file names first, the photo rows are removed with the facility
+                var files = db.FacilityPhotos.Where(p => p.FacilityId == f.Id).Select(p => p.FileName).ToList();
+
                 db.Facilities.Remove(f);
                 db.SaveChanges();
+
+                foreach (var file in files)
+                {
+                    hp.DeletePhoto(file, "photos");
+                }
 
                 TempData["Info"] = "Facility deleted.";
             }

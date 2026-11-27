@@ -91,7 +91,18 @@
 
 @foreach (var f in Model)
 {
+    // First photo (lowest Id), or null when the facility has none
+    var photo = f.Photos.OrderBy(p => p.Id).FirstOrDefault();
+
     <table class="table detail">
+        @if (photo != null)
+        {
+            <tr>
+                <td colspan="2">
+                    <img src="/photos/@photo.FileName" width="300" height="200" alt="@f.Name">
+                </td>
+            </tr>
+        }
         <tr>
             <th>Name</th>
             <td>@f.Name</td>

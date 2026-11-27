@@ -4,6 +4,16 @@
     ViewBag.Title = "Catalog | Detail";
 }
 
+@if (Model.Photos.Any())
+{
+    <p>
+        @foreach (var p in Model.Photos.OrderBy(x => x.Id))
+        {
+            <img src="/photos/@p.FileName" width="300" height="200" alt="@Model.Name">
+        }
+    </p>
+}
+
 <table class="table detail">
     <tr>
         <th>Name</th>

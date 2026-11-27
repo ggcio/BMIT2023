@@ -45,3 +45,28 @@
         <button type="reset">Reset</button>
     </section>
 </form>
+
+<h2>Photos</h2>
+
+<form method="post" action="/Facility/AddPhotos/@Model?.Id" enctype="multipart/form-data">
+    <input type="file" name="photos" accept="image/jpeg,image/png" multiple>
+    <button>Upload</button>
+</form>
+
+@{
+    var photos = (List<FacilityPhoto>)ViewBag.Photos;
+}
+
+@if (photos.Count == 0)
+{
+    <p>No photos yet.</p>
+}
+
+@foreach (var p in photos)
+{
+    <p>
+        <img src="/photos/@p.FileName" width="150" height="100">
+        <br>
+        <button data-post="/Facility/DeletePhoto/@p.Id">Delete</button>
+    </p>
+}

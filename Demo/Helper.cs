@@ -35,14 +35,14 @@ public class Helper(IWebHostEnvironment en,
         return "";
     }
 
-    public string SavePhoto(IFormFile f, string folder)
+    public string SavePhoto(IFormFile f, string folder, int width = 200, int height = 200)
     {
         var file = Guid.NewGuid().ToString("n") + ".jpg";
         var path = Path.Combine(en.WebRootPath, folder, file);
 
         var options = new ResizeOptions
         {
-            Size = new(200, 200),
+            Size = new(width, height),
             Mode = ResizeMode.Crop,
         };
 
