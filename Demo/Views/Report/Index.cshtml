@@ -6,14 +6,19 @@
     var f = "yyyy-MM-dd";
 }
 
-<p>
+@* Print / Save as PDF: hide the menu, quick links, filter form and buttons *@
+<style media="print">
+    header, .no-print { display: none !important; }
+</style>
+
+<p class="no-print">
     Quick:
     <a href="/Report?From=@today.AddDays(-6).ToString(f)&To=@today.ToString(f)">Last 7 days</a> |
     <a href="/Report?From=@today.AddDays(-29).ToString(f)&To=@today.ToString(f)">Last 30 days</a> |
     <a href="/Report?From=@(new DateOnly(today.Year, today.Month, 1).ToString(f))&To=@today.ToString(f)">This month</a>
 </p>
 
-<form method="get" class="form">
+<form method="get" class="form no-print">
     <div asp-validation-summary="ModelOnly"></div>
 
     <label>Range</label>
@@ -74,6 +79,11 @@
 @if (ViewBag.HasData)
 {
     <p>Showing @ViewBag.RangeText</p>
+
+    <p class="no-print">
+        <a href="/Report/Export@(Context.Request.QueryString)" class="btn">Export CSV</a>
+        <button type="button" class="btn" onclick="window.print()">Print / Save as PDF</button>
+    </p>
 
     <div class="cards">
         <div class="card">

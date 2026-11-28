@@ -8,18 +8,12 @@ namespace Demo.Controllers;
 [Authorize(Roles = "admin")]
 public class ReportController(DB db, Helper hp) : Controller
 {
-    // GET: Report/Index?Mode=&From=&To=&FromMonth=&FromYear=&ToMonth=&ToYear=&FacilityId=&CategoryId=
-    public IActionResult Index(ReportFilterVM vm)
+    // Fill in the defaults and work out the date range.
+    // Returns false (with the error in ModelState) when the filter is invalid.
+    private bool TryGetRange(ReportFilterVM vm, out DateOnly from, out DateOnly to)
     {
         var today = DateTime.Today.ToDateOnly();
-
-        // Dropdowns ----------------------------------------------------------
-        ViewBag.FacilityList = new SelectList(db.Facilities.OrderBy(f => f.Name), "Id", "Name");
-        ViewBag.CategoryList = new SelectList(db.Categories.OrderBy(c => c.Name), "Id", "Name");
-        ViewBag.MonthList    = hp.GetMonthList();
-        ViewBag.YearList     = hp.GetYearList(today.Year - 2, today.Year, true);
-        ViewBag.Today        = today;
-        ViewBag.HasData      = false;
+        from = to = today;
 
         // Defaults: last 30 days, and this month for the month fields
         vm.From      ??= today.AddDays(-29);
@@ -29,14 +23,11 @@ public class ReportController(DB db, Helper hp) : Controller
         vm.ToMonth   ??= today.Month;
         vm.ToYear    ??= today.Year;
 
-        // Invalid filter (e.g. month 13): show the form with errors and no data
+        // Invalid field, e.g. month 13
         if (!ModelState.IsValid)
         {
-            return View(vm);
+            return false;
         }
-
-        // (1) Work out the date range ---------------------------------------
-        DateOnly from, to;
 
         if (vm.Mode == "Month")
         {
@@ -53,18 +44,120 @@ public class ReportController(DB db, Helper hp) : Controller
         if (from > to)
         {
             ModelState.AddModelError("", "From must not be after To.");
+            return false;
+        }
+
+        return true;
+    }
+
+    // Facilities that match both the facility and the category filter
+    private List<int> FacilityIds(ReportFilterVM vm)
+    {
+        return db.Facilities
+                 .Where(f => (vm.FacilityId == null || f.Id == vm.FacilityId) &&
+                             (vm.CategoryId == null || f.CategoryId == vm.CategoryId))
+                 .Select(f => f.Id)
+                 .ToList();
+    }
+
+    // CSV value: quote it when it has a comma, quote or line break, doubling any quotes
+    private static string Csv(string? value)
+    {
+        value ??= "";
+
+        if (value.IndexOfAny([',', '"', '\r', '\n']) >= 0)
+        {
+            value = "\"" + value.Replace("\"", "\"\"") + "\"";
+        }
+
+        return value;
+    }
+
+    // GET: Report/Export (same query fields as Index)
+    public IActionResult Export(ReportFilterVM vm)
+    {
+        if (!TryGetRange(vm, out var from, out var to))
+        {
+            TempData["Info"] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+            return Redirect("/Report" + Request.QueryString);
+        }
+
+        var facilityIds = FacilityIds(vm);
+
+        var bookings = db.Bookings
+                         .Include(b => b.User)
+                         .Include(b => b.TimeSlot)
+                         .ThenInclude(s => s.Facility)
+                         .ThenInclude(f => f.Category)
+                         .Include(b => b.Payment)
+                         .Where(b => facilityIds.Contains(b.TimeSlot.FacilityId) &&
+                                     b.TimeSlot.Date >= from &&
+                                     b.TimeSlot.Date <= to)
+                         .OrderBy(b => b.TimeSlot.Date)
+                         .ThenBy(b => b.TimeSlot.StartTime)
+                         .ThenBy(b => b.Id)
+                         .ToList();
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("Booking ID,Member,Email,Member Type,Facility,Category,Date,Start,End,Peak,Price,Status,Refund Status,Amount Paid,Paid At,Checked In At");
+
+        foreach (var b in bookings)
+        {
+            var paid = b.Payment?.Status == "Paid";
+
+            string[] row =
+            [
+                b.Id.ToString(),
+                b.User.Name,
+                b.User.Email,
+                b.User.Role == UserRole.student ? "Student" : "Public",
+                b.TimeSlot.Facility.Name,
+                b.TimeSlot.Facility.Category.Name,
+                b.TimeSlot.Date.ToString("yyyy-MM-dd"),
+                b.TimeSlot.StartTime.ToString("HH:mm"),
+                b.TimeSlot.EndTime.ToString("HH:mm"),
+                b.TimeSlot.IsPeak ? "Yes" : "No",
+                b.Price.ToString("0.00"),
+                b.Status,
+                b.RefundStatus,
+                paid ? b.Payment!.Amount.ToString("0.00") : "",
+                b.Payment?.PaidAt?.ToString("yyyy-MM-dd HH:mm") ?? "",
+                b.CheckedInAt?.ToString("yyyy-MM-dd HH:mm") ?? "",
+            ];
+
+            sb.AppendLine(string.Join(",", row.Select(Csv)));
+        }
+
+        // UTF-8 with a BOM so Excel reads the text correctly
+        var encoding = new System.Text.UTF8Encoding(true);
+        var bytes = encoding.GetPreamble().Concat(encoding.GetBytes(sb.ToString())).ToArray();
+
+        return File(bytes, "text/csv", $"bookings_{from:yyyyMMdd}_{to:yyyyMMdd}.csv");
+    }
+
+    // GET: Report/Index?Mode=&From=&To=&FromMonth=&FromYear=&ToMonth=&ToYear=&FacilityId=&CategoryId=
+    public IActionResult Index(ReportFilterVM vm)
+    {
+        var today = DateTime.Today.ToDateOnly();
+
+        // Dropdowns ----------------------------------------------------------
+        ViewBag.FacilityList = new SelectList(db.Facilities.OrderBy(f => f.Name), "Id", "Name");
+        ViewBag.CategoryList = new SelectList(db.Categories.OrderBy(c => c.Name), "Id", "Name");
+        ViewBag.MonthList    = hp.GetMonthList();
+        ViewBag.YearList     = hp.GetYearList(today.Year - 2, today.Year, true);
+        ViewBag.Today        = today;
+        ViewBag.HasData      = false;
+
+        // (1) Work out the date range (invalid filter: show the form with errors and no data)
+        if (!TryGetRange(vm, out var from, out var to))
+        {
             return View(vm);
         }
 
         ViewBag.HasData = true;
         ViewBag.RangeText = $"{from:dd MMM yyyy} to {to:dd MMM yyyy}";
 
-        // Facilities that match both filters
-        var facilityIds = db.Facilities
-                            .Where(f => (vm.FacilityId == null || f.Id == vm.FacilityId) &&
-                                        (vm.CategoryId == null || f.CategoryId == vm.CategoryId))
-                            .Select(f => f.Id)
-                            .ToList();
+        var facilityIds = FacilityIds(vm);
 
         // (2) Chart 1: Confirmed bookings per facility, by slot date ---------
         var facilities = db.Facilities
