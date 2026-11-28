@@ -41,16 +41,20 @@
         <select asp-for="FromMonth" asp-items="ViewBag.MonthList"></select>
         <select asp-for="FromYear" asp-items="ViewBag.YearList"></select>
     </div>
-    <span asp-validation-for="FromMonth"></span>
-    <span asp-validation-for="FromYear"></span>
+    <div>
+        <span asp-validation-for="FromMonth"></span>
+        <span asp-validation-for="FromYear"></span>
+    </div>
 
     <label>To Month</label>
     <div>
         <select asp-for="ToMonth" asp-items="ViewBag.MonthList"></select>
         <select asp-for="ToYear" asp-items="ViewBag.YearList"></select>
     </div>
-    <span asp-validation-for="ToMonth"></span>
-    <span asp-validation-for="ToYear"></span>
+    <div>
+        <span asp-validation-for="ToMonth"></span>
+        <span asp-validation-for="ToYear"></span>
+    </div>
 
     <label asp-for="FacilityId"></label>
     <select asp-for="FacilityId" asp-items="ViewBag.FacilityList">
