@@ -4,22 +4,41 @@
     ViewBag.Title = "Report | Index";
     DateOnly today = ViewBag.Today;
     var f = "yyyy-MM-dd";
+
+    string[] tabs = ["Overview", "Bookings", "Revenue", "Attendance", "Refunds"];
+
+    // Current tab (falls back to Overview when the value is invalid)
+    var tab = tabs.Contains(Model.Report) ? Model.Report : "Overview";
+
+    // Same filters, different tab
+    string TabUrl(string t)
+    {
+        var q = Context.Request.Query.Where(kv => kv.Key != "Report")
+                                     .ToDictionary(kv => kv.Key, kv => (string?)kv.Value.ToString());
+        q["Report"] = t;
+        return "/Report" + QueryString.Create(q);
+    }
 }
 
-@* Print / Save as PDF: hide the menu, quick links, filter form and buttons *@
+@* Print / Save as PDF: hide the menu, quick links, filter form, tabs and buttons *@
 <style media="print">
     header, .no-print { display: none !important; }
 </style>
 
 <p class="no-print">
     Quick:
-    <a href="/Report?From=@today.AddDays(-6).ToString(f)&To=@today.ToString(f)">Last 7 days</a> |
-    <a href="/Report?From=@today.AddDays(-29).ToString(f)&To=@today.ToString(f)">Last 30 days</a> |
-    <a href="/Report?From=@(new DateOnly(today.Year, today.Month, 1).ToString(f))&To=@today.ToString(f)">This month</a>
+    <a href="/Report?From=@today.AddDays(-6).ToString(f)&To=@today.ToString(f)&Report=@tab">Last 7 days</a> |
+    <a href="/Report?From=@today.AddDays(-29).ToString(f)&To=@today.ToString(f)&Report=@tab">Last 30 days</a> |
+    <a href="/Report?From=@(new DateOnly(today.Year, today.Month, 1).ToString(f))&To=@today.ToString(f)&Report=@tab">This month</a>
 </p>
+
+@* Report is a hidden field, so its error is shown here, outside the form grid *@
+<span asp-validation-for="Report"></span>
 
 <form method="get" class="form no-print">
     <div asp-validation-summary="ModelOnly"></div>
+
+    <input type="hidden" asp-for="Report">
 
     <label>Range</label>
     <div>
@@ -28,30 +47,30 @@
     </div>
     <span asp-validation-for="Mode"></span>
 
-    <label asp-for="From"></label>
-    <input asp-for="From">
-    <span asp-validation-for="From"></span>
+    <label asp-for="From" class="date-field"></label>
+    <input asp-for="From" class="date-field">
+    <span asp-validation-for="From" class="date-field"></span>
 
-    <label asp-for="To"></label>
-    <input asp-for="To">
-    <span asp-validation-for="To"></span>
+    <label asp-for="To" class="date-field"></label>
+    <input asp-for="To" class="date-field">
+    <span asp-validation-for="To" class="date-field"></span>
 
-    <label>From Month</label>
-    <div>
+    <label class="month-field">From Month</label>
+    <div class="month-field">
         <select asp-for="FromMonth" asp-items="ViewBag.MonthList"></select>
         <select asp-for="FromYear" asp-items="ViewBag.YearList"></select>
     </div>
-    <div>
+    <div class="month-field">
         <span asp-validation-for="FromMonth"></span>
         <span asp-validation-for="FromYear"></span>
     </div>
 
-    <label>To Month</label>
-    <div>
+    <label class="month-field">To Month</label>
+    <div class="month-field">
         <select asp-for="ToMonth" asp-items="ViewBag.MonthList"></select>
         <select asp-for="ToYear" asp-items="ViewBag.YearList"></select>
     </div>
-    <div>
+    <div class="month-field">
         <span asp-validation-for="ToMonth"></span>
         <span asp-validation-for="ToYear"></span>
     </div>
@@ -68,13 +87,13 @@
     </select>
     <span asp-validation-for="CategoryId"></span>
 
-    <label asp-for="GroupBy"></label>
-    <select asp-for="GroupBy">
+    <label asp-for="GroupBy" class="group-field"></label>
+    <select asp-for="GroupBy" class="group-field">
         <option value="Day">Day</option>
         <option value="Week">Week</option>
         <option value="Month">Month</option>
     </select>
-    <span asp-validation-for="GroupBy"></span>
+    <span asp-validation-for="GroupBy" class="group-field"></span>
 
     <section>
         <button>Show</button>
@@ -84,6 +103,22 @@
 
 @if (ViewBag.HasData)
 {
+    string[] charts = ViewBag.Charts;
+
+    <p class="days no-print">
+        @foreach (var t in tabs)
+        {
+            if (t == tab)
+            {
+                <span class="day selected" aria-current="page">@t</span>
+            }
+            else
+            {
+                <a href="@TabUrl(t)" class="day">@t</a>
+            }
+        }
+    </p>
+
     <p>Showing @ViewBag.RangeText</p>
 
     <p class="no-print">
@@ -91,126 +126,167 @@
         <button type="button" class="btn" onclick="window.print()">Print / Save as PDF</button>
     </p>
 
-    <div class="cards">
-        <div class="card">
-            <div class="card-body">
-                <p>Bookings (by slot date)</p>
-                <h3>@ViewBag.Total total</h3>
-                <p>Confirmed @ViewBag.Confirmed &middot; Pending @ViewBag.Pending &middot; Cancelled @ViewBag.Cancelled</p>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-body">
-                <p>Net revenue (paid, not refunded)</p>
-                <h3>RM @(((decimal)ViewBag.NetRevenue).ToString("0.00"))</h3>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-body">
-                <p>Refunds (by slot date)</p>
-                <h3>Refund due: @ViewBag.RefundDueCount (RM @(((decimal)ViewBag.RefundDueAmount).ToString("0.00")))</h3>
-                <p>Refunded: @ViewBag.RefundedCount (RM @(((decimal)ViewBag.RefundedAmount).ToString("0.00")))</p>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-body">
-                <p>Attendance (ended Confirmed slots)</p>
-                <h3>Check-in rate @ViewBag.CheckInRate</h3>
-                <p>Checked in @ViewBag.CheckedIn &middot; No-shows @ViewBag.NoShows</p>
-            </div>
-        </div>
-    </div>
-
-    @* Two charts per row where the width allows, one per row on narrow screens *@
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-top: 20px">
-        @foreach (var id in new[] { "bookingChart", "revenueChart", "facilityRevenueChart", "categoryRevenueChart",
-                                    "peakBookingChart", "peakRevenueChart", "roleChart", "hourChart" })
-        {
-            <div class="card">
-                <div class="card-body">
-                    <canvas id="@id"></canvas>
+    @if (tab != "Bookings")
+    {
+        <div class="cards">
+            @if (tab == "Overview")
+            {
+                <div class="card">
+                    <div class="card-body">
+                        <p>Bookings (by slot date)</p>
+                        <h3>@ViewBag.Total total</h3>
+                        <p>Confirmed @ViewBag.Confirmed &middot; Pending @ViewBag.Pending &middot; Cancelled @ViewBag.Cancelled</p>
+                    </div>
                 </div>
-            </div>
+            }
+            @if (tab is "Overview" or "Revenue")
+            {
+                <div class="card">
+                    <div class="card-body">
+                        <p>Net revenue (paid, not refunded)</p>
+                        <h3>RM @(((decimal)ViewBag.NetRevenue).ToString("0.00"))</h3>
+                    </div>
+                </div>
+            }
+            @if (tab is "Overview" or "Refunds")
+            {
+                <div class="card">
+                    <div class="card-body">
+                        <p>Refunds (by slot date)</p>
+                        <h3>Refund due: @ViewBag.RefundDueCount (RM @(((decimal)ViewBag.RefundDueAmount).ToString("0.00")))</h3>
+                        <p>Refunded: @ViewBag.RefundedCount (RM @(((decimal)ViewBag.RefundedAmount).ToString("0.00")))</p>
+                    </div>
+                </div>
+            }
+            @if (tab is "Overview" or "Attendance")
+            {
+                <div class="card">
+                    <div class="card-body">
+                        <p>Attendance (ended Confirmed slots)</p>
+                        <h3>Check-in rate @ViewBag.CheckInRate</h3>
+                        <p>Checked in @ViewBag.CheckedIn &middot; No-shows @ViewBag.NoShows</p>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (charts.Length > 0)
+    {
+        @* Two charts per row where the width allows, one per row on narrow screens *@
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-top: 20px">
+            @foreach (var id in charts)
+            {
+                <div class="card">
+                    <div class="card-body">
+                        <canvas id="@id"></canvas>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (tab == "Attendance")
+    {
+        List<Booking> noShows = ViewBag.NoShowList;
+
+        <h2>No-shows (@noShows.Count)</h2>
+
+        @if (noShows.Count == 0)
+        {
+            <p>No no-shows in this range.</p>
         }
-    </div>
-
-    List<Booking> noShows = ViewBag.NoShowList;
-    List<Booking> refunds = ViewBag.RefundList;
-
-    <h2>No-shows (@noShows.Count)</h2>
-
-    @if (noShows.Count == 0)
-    {
-        <p>No no-shows in this range.</p>
-    }
-    else
-    {
-        <table class="table">
-            <tr>
-                <th>Id</th>
-                <th>Member</th>
-                <th>Email</th>
-                <th>Member Type</th>
-                <th>Facility</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th></th>
-            </tr>
-
-            @foreach (var b in noShows)
-            {
+        else
+        {
+            <table class="table">
                 <tr>
-                    <td>@b.Id</td>
-                    <td>@b.User.Name</td>
-                    <td>@b.User.Email</td>
-                    <td>@(b.User.Role == UserRole.student ? "Student" : "Public")</td>
-                    <td>@b.TimeSlot.Facility.Name</td>
-                    <td>@b.TimeSlot.Date.ToString("dd MMM yyyy")</td>
-                    <td>@b.TimeSlot.StartTime.ToString("HH:mm") - @b.TimeSlot.EndTime.ToString("HH:mm")</td>
-                    <td><a href="/AdminBooking/Detail/@b.Id">Detail</a></td>
+                    <th>Id</th>
+                    <th>Member</th>
+                    <th>Email</th>
+                    <th>Member Type</th>
+                    <th>Facility</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th></th>
                 </tr>
-            }
-        </table>
+
+                @foreach (var b in noShows)
+                {
+                    <tr>
+                        <td>@b.Id</td>
+                        <td>@b.User.Name</td>
+                        <td>@b.User.Email</td>
+                        <td>@(b.User.Role == UserRole.student ? "Student" : "Public")</td>
+                        <td>@b.TimeSlot.Facility.Name</td>
+                        <td>@b.TimeSlot.Date.ToString("dd MMM yyyy")</td>
+                        <td>@b.TimeSlot.StartTime.ToString("HH:mm") - @b.TimeSlot.EndTime.ToString("HH:mm")</td>
+                        <td><a href="/AdminBooking/Detail/@b.Id">Detail</a></td>
+                    </tr>
+                }
+            </table>
+        }
     }
 
-    <h2>Refunds (@refunds.Count)</h2>
-
-    @if (refunds.Count == 0)
+    @if (tab == "Refunds")
     {
-        <p>No refunds in this range.</p>
-    }
-    else
-    {
-        <table class="table">
-            <tr>
-                <th>Id</th>
-                <th>Member</th>
-                <th>Facility</th>
-                <th>Date</th>
-                <th>Amount (RM)</th>
-                <th>Refund Status</th>
-                <th></th>
-            </tr>
+        List<Booking> refunds = ViewBag.RefundList;
 
-            @foreach (var b in refunds)
-            {
+        <h2>Refunds (@refunds.Count)</h2>
+
+        @if (refunds.Count == 0)
+        {
+            <p>No refunds in this range.</p>
+        }
+        else
+        {
+            <table class="table">
                 <tr>
-                    <td>@b.Id</td>
-                    <td>@b.User.Name</td>
-                    <td>@b.TimeSlot.Facility.Name</td>
-                    <td>@b.TimeSlot.Date.ToString("dd MMM yyyy")</td>
-                    <td>@((b.Payment?.Amount ?? 0).ToString("0.00"))</td>
-                    <td>@(b.RefundStatus == "RefundDue" ? "Refund due" : "Refunded")</td>
-                    <td><a href="/AdminBooking/Detail/@b.Id">Detail</a></td>
+                    <th>Id</th>
+                    <th>Member</th>
+                    <th>Facility</th>
+                    <th>Date</th>
+                    <th>Amount (RM)</th>
+                    <th>Refund Status</th>
+                    <th></th>
                 </tr>
-            }
-        </table>
+
+                @foreach (var b in refunds)
+                {
+                    <tr>
+                        <td>@b.Id</td>
+                        <td>@b.User.Name</td>
+                        <td>@b.TimeSlot.Facility.Name</td>
+                        <td>@b.TimeSlot.Date.ToString("dd MMM yyyy")</td>
+                        <td>@((b.Payment?.Amount ?? 0).ToString("0.00"))</td>
+                        <td>@(b.RefundStatus == "RefundDue" ? "Refund due" : "Refunded")</td>
+                        <td><a href="/AdminBooking/Detail/@b.Id">Detail</a></td>
+                    </tr>
+                }
+            </table>
+        }
     }
 }
 
 @section foot {
+    <script>
+        // By date shows From/To, By month shows the month fields (hidden fields keep their values)
+        function showRangeFields() {
+            var byMonth = $('input[name=Mode]:checked').val() == 'Month';
+            $('.date-field').toggle(!byMonth);
+            $('.month-field').toggle(byMonth);
+        }
+
+        $('input[name=Mode]').on('change', showRangeFields);
+        showRangeFields();
+
+        // Group by is only used on the Overview and Revenue tabs
+        $('.group-field').toggle(@Json.Serialize(tab is "Overview" or "Revenue"));
+    </script>
+
     @if (ViewBag.HasData)
     {
+        string[] charts = ViewBag.Charts;
+
         <script src="/js/chart.umd.min.js"></script>
         <script>
             // Draw one chart: bar charts start at 0, pie charts show a legend
@@ -224,30 +300,42 @@
                     },
                 });
             }
+        </script>
 
-            draw('bookingChart', 'bar', 'Bookings per Facility',
-                 @Json.Serialize(ViewBag.FacilityLabels), 'Confirmed Bookings', @Json.Serialize(ViewBag.FacilityValues), true);
-
-            draw('revenueChart', 'bar', @Json.Serialize(ViewBag.RevenueTitle),
-                 @Json.Serialize(ViewBag.RevenueLabels), 'Revenue (RM)', @Json.Serialize(ViewBag.RevenueValues), false);
-
-            draw('facilityRevenueChart', 'bar', 'Revenue (RM) by Facility',
-                 @Json.Serialize(ViewBag.FacilityRevenueLabels), 'Revenue (RM)', @Json.Serialize(ViewBag.FacilityRevenueValues), false);
-
-            draw('categoryRevenueChart', 'bar', 'Revenue (RM) by Category',
-                 @Json.Serialize(ViewBag.CategoryRevenueLabels), 'Revenue (RM)', @Json.Serialize(ViewBag.CategoryRevenueValues), false);
-
-            draw('peakBookingChart', 'pie', 'Peak vs Off-peak: Confirmed Bookings',
-                 ['Peak', 'Off-peak'], 'Confirmed Bookings', @Json.Serialize(ViewBag.PeakBookingValues), true);
-
-            draw('peakRevenueChart', 'pie', 'Peak vs Off-peak: Revenue (RM)',
-                 ['Peak', 'Off-peak'], 'Revenue (RM)', @Json.Serialize(ViewBag.PeakRevenueValues), false);
-
-            draw('roleChart', 'pie', 'Student vs Public: Confirmed Bookings',
-                 ['Student', 'Public'], 'Confirmed Bookings', @Json.Serialize(ViewBag.RoleValues), true);
-
-            draw('hourChart', 'bar', 'Busiest Hours: Confirmed Bookings',
-                 @Json.Serialize(ViewBag.HourLabels), 'Confirmed Bookings', @Json.Serialize(ViewBag.HourValues), true);
+        @* Only the chosen tab's charts are drawn *@
+        <script>
+            @if (charts.Contains("bookingChart"))
+            {
+                @:draw('bookingChart', 'bar', 'Bookings per Facility', @Json.Serialize(ViewBag.FacilityLabels), 'Confirmed Bookings', @Json.Serialize(ViewBag.FacilityValues), true);
+            }
+            @if (charts.Contains("revenueChart"))
+            {
+                @:draw('revenueChart', 'bar', @Json.Serialize(ViewBag.RevenueTitle), @Json.Serialize(ViewBag.RevenueLabels), 'Revenue (RM)', @Json.Serialize(ViewBag.RevenueValues), false);
+            }
+            @if (charts.Contains("facilityRevenueChart"))
+            {
+                @:draw('facilityRevenueChart', 'bar', 'Revenue (RM) by Facility', @Json.Serialize(ViewBag.FacilityRevenueLabels), 'Revenue (RM)', @Json.Serialize(ViewBag.FacilityRevenueValues), false);
+            }
+            @if (charts.Contains("categoryRevenueChart"))
+            {
+                @:draw('categoryRevenueChart', 'bar', 'Revenue (RM) by Category', @Json.Serialize(ViewBag.CategoryRevenueLabels), 'Revenue (RM)', @Json.Serialize(ViewBag.CategoryRevenueValues), false);
+            }
+            @if (charts.Contains("peakBookingChart"))
+            {
+                @:draw('peakBookingChart', 'pie', 'Peak vs Off-peak: Confirmed Bookings', ['Peak', 'Off-peak'], 'Confirmed Bookings', @Json.Serialize(ViewBag.PeakBookingValues), true);
+            }
+            @if (charts.Contains("peakRevenueChart"))
+            {
+                @:draw('peakRevenueChart', 'pie', 'Peak vs Off-peak: Revenue (RM)', ['Peak', 'Off-peak'], 'Revenue (RM)', @Json.Serialize(ViewBag.PeakRevenueValues), false);
+            }
+            @if (charts.Contains("roleChart"))
+            {
+                @:draw('roleChart', 'pie', 'Student vs Public: Confirmed Bookings', ['Student', 'Public'], 'Confirmed Bookings', @Json.Serialize(ViewBag.RoleValues), true);
+            }
+            @if (charts.Contains("hourChart"))
+            {
+                @:draw('hourChart', 'bar', 'Busiest Hours: Confirmed Bookings', @Json.Serialize(ViewBag.HourLabels), 'Confirmed Bookings', @Json.Serialize(ViewBag.HourValues), true);
+            }
         </script>
     }
 }

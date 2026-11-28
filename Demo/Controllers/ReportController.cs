@@ -168,6 +168,16 @@ public class ReportController(DB db, Helper hp) : Controller
         ViewBag.HasData = true;
         ViewBag.RangeText = $"{from:dd MMM yyyy} to {to:dd MMM yyyy}";
 
+        // Charts shown on each report tab
+        ViewBag.Charts = vm.Report switch
+        {
+            "Bookings"   => new[] { "bookingChart", "peakBookingChart", "roleChart", "hourChart" },
+            "Revenue"    => new[] { "revenueChart", "facilityRevenueChart", "categoryRevenueChart", "peakRevenueChart" },
+            "Attendance" => new string[0],
+            "Refunds"    => new string[0],
+            _            => new[] { "bookingChart", "revenueChart" },
+        };
+
         var facilityIds = FacilityIds(vm);
 
         // (2) Chart 1: Confirmed bookings per facility, by slot date ---------

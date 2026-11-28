@@ -288,4 +288,8 @@ public class ReportFilterVM
     [RegularExpression("^(Day|Week|Month)$", ErrorMessage = "Invalid {0}.")]
     [DisplayName("Group by")]
     public string GroupBy { get; set; } = "Day";
+
+    // Which report tab is shown
+    [RegularExpression("^(Overview|Bookings|Revenue|Attendance|Refunds)$", ErrorMessage = "Invalid {0}.")]
+    public string Report { get; set; } = "Overview";
 }
