@@ -56,11 +56,13 @@
     <select asp-for="FacilityId" asp-items="ViewBag.FacilityList">
         <option value="">All</option>
     </select>
+    <span asp-validation-for="FacilityId"></span>
 
     <label asp-for="CategoryId"></label>
     <select asp-for="CategoryId" asp-items="ViewBag.CategoryList">
         <option value="">All</option>
     </select>
+    <span asp-validation-for="CategoryId"></span>
 
     <label asp-for="GroupBy"></label>
     <select asp-for="GroupBy">

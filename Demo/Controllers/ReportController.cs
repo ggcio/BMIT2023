@@ -23,6 +23,17 @@ public class ReportController(DB db, Helper hp) : Controller
         vm.ToMonth   ??= today.Month;
         vm.ToYear    ??= today.Year;
 
+        // Unknown facility or category in the query string
+        if (vm.FacilityId != null && !db.Facilities.Any(f => f.Id == vm.FacilityId))
+        {
+            ModelState.AddModelError("FacilityId", "Invalid Facility.");
+        }
+
+        if (vm.CategoryId != null && !db.Categories.Any(c => c.Id == vm.CategoryId))
+        {
+            ModelState.AddModelError("CategoryId", "Invalid Category.");
+        }
+
         // Invalid field, e.g. month 13
         if (!ModelState.IsValid)
         {
