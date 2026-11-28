@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 
 namespace Demo.Controllers;
 
@@ -135,7 +136,8 @@ public class ReportController(DB db, Helper hp) : Controller
         ViewBag.FacilityRevenueValues = facilityNames.Select(f => payments.Where(x => x.FacilityId == f.Id).Sum(x => x.Amount)).ToList();
 
         var categories = db.Categories
-                           .Where(c => vm.CategoryId == null || c.Id == vm.CategoryId)
+                           .Where(c => (vm.CategoryId == null || c.Id == vm.CategoryId) &&
+                                       (vm.FacilityId == null || c.Facilities.Any(f => f.Id == vm.FacilityId)))
                            .OrderBy(c => c.Id)
                            .Select(c => new { c.Id, c.Name })
                            .ToList();
@@ -204,6 +206,32 @@ public class ReportController(DB db, Helper hp) : Controller
         ViewBag.CheckedIn   = checkedIn;
         ViewBag.NoShows     = noShows;
         ViewBag.CheckInRate = ended.Count == 0 ? "-" : $"{100.0 * checkedIn / ended.Count:0}%";
+
+        // (5) Lists: no-shows and refunds, same bookings as the cards --------
+        var listed = db.Bookings
+                       .Include(b => b.User)
+                       .Include(b => b.TimeSlot)
+                       .ThenInclude(s => s.Facility)
+                       .Include(b => b.Payment)
+                       .Where(b => facilityIds.Contains(b.TimeSlot.FacilityId) &&
+                                   b.TimeSlot.Date >= from &&
+                                   b.TimeSlot.Date <= to &&
+                                   ((b.Status == "Confirmed" && b.CheckedInAt == null) ||
+                                    b.RefundStatus == "RefundDue" || b.RefundStatus == "Refunded"))
+                       .OrderByDescending(b => b.TimeSlot.Date)
+                       .ThenByDescending(b => b.TimeSlot.StartTime)
+                       .ToList();
+
+        // No-shows: Confirmed, slot already ended, never checked in (latest first)
+        ViewBag.NoShowList = listed.Where(b => b.Status == "Confirmed" &&
+                                               b.CheckedInAt == null &&
+                                               b.TimeSlot.Date.ToDateTime(b.TimeSlot.EndTime) <= now)
+                                   .ToList();
+
+        // Refunds: Refund due first, then Refunded, latest first within each
+        ViewBag.RefundList = listed.Where(b => b.RefundStatus == "RefundDue" || b.RefundStatus == "Refunded")
+                                   .OrderBy(b => b.RefundStatus == "RefundDue" ? 0 : 1)
+                                   .ToList();
 
         return View(vm);
     }

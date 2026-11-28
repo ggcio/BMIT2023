@@ -117,6 +117,79 @@
             </div>
         }
     </div>
+
+    List<Booking> noShows = ViewBag.NoShowList;
+    List<Booking> refunds = ViewBag.RefundList;
+
+    <h2>No-shows (@noShows.Count)</h2>
+
+    @if (noShows.Count == 0)
+    {
+        <p>No no-shows in this range.</p>
+    }
+    else
+    {
+        <table class="table">
+            <tr>
+                <th>Id</th>
+                <th>Member</th>
+                <th>Email</th>
+                <th>Member Type</th>
+                <th>Facility</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th></th>
+            </tr>
+
+            @foreach (var b in noShows)
+            {
+                <tr>
+                    <td>@b.Id</td>
+                    <td>@b.User.Name</td>
+                    <td>@b.User.Email</td>
+                    <td>@(b.User.Role == UserRole.student ? "Student" : "Public")</td>
+                    <td>@b.TimeSlot.Facility.Name</td>
+                    <td>@b.TimeSlot.Date.ToString("dd MMM yyyy")</td>
+                    <td>@b.TimeSlot.StartTime.ToString("HH:mm") - @b.TimeSlot.EndTime.ToString("HH:mm")</td>
+                    <td><a href="/AdminBooking/Detail/@b.Id">Detail</a></td>
+                </tr>
+            }
+        </table>
+    }
+
+    <h2>Refunds (@refunds.Count)</h2>
+
+    @if (refunds.Count == 0)
+    {
+        <p>No refunds in this range.</p>
+    }
+    else
+    {
+        <table class="table">
+            <tr>
+                <th>Id</th>
+                <th>Member</th>
+                <th>Facility</th>
+                <th>Date</th>
+                <th>Amount (RM)</th>
+                <th>Refund Status</th>
+                <th></th>
+            </tr>
+
+            @foreach (var b in refunds)
+            {
+                <tr>
+                    <td>@b.Id</td>
+                    <td>@b.User.Name</td>
+                    <td>@b.TimeSlot.Facility.Name</td>
+                    <td>@b.TimeSlot.Date.ToString("dd MMM yyyy")</td>
+                    <td>@((b.Payment?.Amount ?? 0).ToString("0.00"))</td>
+                    <td>@(b.RefundStatus == "RefundDue" ? "Refund due" : "Refunded")</td>
+                    <td><a href="/AdminBooking/Detail/@b.Id">Detail</a></td>
+                </tr>
+            }
+        </table>
+    }
 }
 
 @section foot {
