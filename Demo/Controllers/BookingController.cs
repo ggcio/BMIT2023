@@ -160,7 +160,7 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
 
     // GET: Booking/Create?slotId=
     [Authorize(Roles = "student,public")]
-    public IActionResult Create(int slotId)
+    public async Task<IActionResult> Create(int slotId)
     {
         var own = GetOwnBooking(slotId);
 
@@ -179,7 +179,15 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
             return Redirect("/");
         }
 
-        var user = db.Users.Find(User.Identity!.Name)!;
+        var user = db.Users.Find(User.Identity!.Name);
+
+        // The account was deleted while still logged in
+        if (user == null)
+        {
+            await hp.SignOut();
+            TempData["Info"] = "Your account could not be found. Please log in again.";
+            return Redirect("/Account/Login");
+        }
 
         ViewBag.Slot = slot;
         ViewBag.Price = GetPrice(slot!, user);
@@ -191,7 +199,7 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
     // POST: Booking/Create
     [Authorize(Roles = "student,public")]
     [HttpPost]
-    public IActionResult Create(BookingVM vm)
+    public async Task<IActionResult> Create(BookingVM vm)
     {
         var own = GetOwnBooking(vm.SlotId);
 
@@ -211,7 +219,16 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
             return Redirect("/");
         }
 
-        var user = db.Users.Find(User.Identity!.Name)!;
+        var user = db.Users.Find(User.Identity!.Name);
+
+        // The account was deleted while still logged in
+        if (user == null)
+        {
+            await hp.SignOut();
+            TempData["Info"] = "Your account could not be found. Please log in again.";
+            return Redirect("/Account/Login");
+        }
+
         bool isStudent = user.Role == UserRole.student;
 
         var booking = new Booking
