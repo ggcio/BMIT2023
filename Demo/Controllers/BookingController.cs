@@ -46,6 +46,9 @@ public class BookingController(DB db, IConfiguration cf, Helper hp) : Controller
     {
         return db.TimeSlots
                  .Include(s => s.Facility)
+                 .ThenInclude(f => f.Category)
+                 .Include(s => s.Facility)
+                 .ThenInclude(f => f.Photos)
                  .FirstOrDefault(s => s.Id == slotId);
     }
 

@@ -1,34 +1,41 @@
 @model BookingVM
 
 @{
-    ViewBag.Title = "Booking | Create";
+    ViewBag.Title = "Booking Summary";
     TimeSlot slot = ViewBag.Slot;
     decimal price = ViewBag.Price;
     bool isStudent = ViewBag.IsStudent;
+
+    // First photo, as on the facility page (no image when the facility has none)
+    var photo = slot.Facility.Photos.OrderBy(p => p.Id).FirstOrDefault();
 }
 
-<table class="table detail">
-    <tr>
-        <th>Facility</th>
-        <td>@slot.Facility.Name</td>
-    </tr>
-    <tr>
-        <th>Location</th>
-        <td>@slot.Facility.Location</td>
-    </tr>
-    <tr>
-        <th>Date</th>
-        <td>@slot.Date.ToString("dd MMM yyyy (ddd)")</td>
-    </tr>
-    <tr>
-        <th>Time</th>
-        <td>@slot.StartTime.ToString("HH:mm") - @slot.EndTime.ToString("HH:mm") @(slot.IsPeak ? "(Peak)" : "")</td>
-    </tr>
-    <tr>
-        <th>Price</th>
-        <td>@(isStudent ? "Free (Student)" : $"RM {price:F2}")</td>
-    </tr>
-</table>
+<div class="cards">
+    <div class="card">
+        @if (photo != null)
+        {
+            <img src="/photos/@photo.FileName" alt="@slot.Facility.Name">
+        }
+        <div class="card-body">
+            <span class="badge">@slot.Facility.Category.Name</span>
+            <h3>@slot.Facility.Name</h3>
+            <p>@slot.Facility.Location</p>
+            <p>@slot.Date.ToString("ddd, dd MMM yyyy")</p>
+            <p>
+                @slot.StartTime.ToString("HH:mm") - @slot.EndTime.ToString("HH:mm")
+                @if (slot.IsPeak)
+                {
+                    <span class="badge">Peak</span>
+                }
+            </p>
+            <h2>@(isStudent ? "Free (Student)" : $"RM {price:F2}")</h2>
+            @if (isStudent)
+            {
+                <p>Students book for free.</p>
+            }
+        </div>
+    </div>
+</div>
 
 <br>
 
@@ -39,6 +46,7 @@
     <span asp-validation-for="SlotId"></span>
 
     <section>
-        <button>@(isStudent ? "Confirm Booking" : "Book and Pay")</button>
+        <button class="btn">@(isStudent ? "Confirm Booking" : "Book and Pay")</button>
+        <a href="/Catalog/Detail/@slot.FacilityId?date=@slot.Date.ToString("yyyy-MM-dd")" class="btn secondary">Back to facility</a>
     </section>
 </form>
